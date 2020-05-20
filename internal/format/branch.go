@@ -19,12 +19,14 @@ func (b BranchType) String() string {
 
 var (
 	forbiddenChar = regexp.MustCompile(`(?m)[\?\*~^:\\]|@{|\.{2}`)
+	blank         = regexp.MustCompile(`\s+`)
 	void          = []byte("")
+	sep           = []byte("-")
 )
 
-func sanitize(s string) string {
-	s = string(forbiddenChar.ReplaceAll([]byte(s), void))
-	s = strings.ReplaceAll(s, " ", "-")
+func sanitizeBranch(s string) string {
+	sb := forbiddenChar.ReplaceAll([]byte(s), void)
+	s = string(blank.ReplaceAll(sb, sep))
 	s = strings.Trim(s, "/")
 	return strings.ToLower(s)
 }
@@ -35,8 +37,8 @@ func BranchName(btype BranchType, description string, username string) string {
 		branch += "/" + username
 	}
 	if description != "" {
-		branch += "/" + sanitize(description)
+		branch += "/" + description
 	}
 
-	return branch
+	return sanitizeBranch(branch)
 }
