@@ -1,6 +1,10 @@
 package format
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/b4nst/turbogit/internal/constants"
+)
 
 type CommitType int
 
@@ -51,11 +55,14 @@ func CommitMessage(o *CommitMessageOption) string {
 	msg += fmt.Sprintf(": %s", o.Description)
 	// Add body if any
 	if o.Body != "" {
-		msg += fmt.Sprintf("\n%s", o.Body)
+		msg += constants.LINE_BREAK + constants.LINE_BREAK + o.Body
 	}
 	// Add footers if any
-	for _, f := range o.Footers {
-		msg += fmt.Sprintf("\n%s", f)
+	if len(o.Footers) > 0 {
+		msg += constants.LINE_BREAK
+		for _, f := range o.Footers {
+			msg += constants.LINE_BREAK + f
+		}
 	}
 
 	return msg
