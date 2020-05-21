@@ -2,4 +2,7 @@ fileignoreconfig:
 - filename: go.sum
   checksum: 39c886ab2f3ddd8ab0852541d175d37aa1f537cf6062757865b69177e4a2a73d
   ignore_detectors: []
+- filename: assets/tu_logo.ai
+  checksum: 914c8f4d7cefc065c7826d91ca686825382b8a49b52c23c6a10a445df16869b6
+  ignore_detectors: []
 scopeconfig: []
