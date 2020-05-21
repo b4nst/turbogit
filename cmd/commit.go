@@ -26,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/b4nst/turbogit/internal/context"
 	"github.com/b4nst/turbogit/internal/format"
 	"github.com/go-git/go-git/v5"
@@ -36,9 +37,9 @@ import (
 func init() {
 	rootCmd.AddCommand(commitCmd)
 
-	commitCmd.Flags().StringP("type", "t", "", "Commit type : [b]uild, [c]i, [d]ocs, f[e]at, [f]ix, [p]erf, [r]efactor, [s]tyle, [t]est")
+	commitCmd.Flags().StringP("type", "t", "", "Commit type : [b]uild, [ch]ore, [ci], [d]ocs, [fe]at, [fi]x, [p]erf, [r]efactor, [s]tyle, [t]est")
 	commitCmd.Flags().BoolP("breaking-changes", "c", false, "Commit contains breaking changes")
-	commitCmd.Flags().StringP("body", "b", "", "Commit body.")
+	commitCmd.Flags().BoolP("edit", "e", false, "Prompt editor to edit your message (add body or/and footer(s)).")
 	commitCmd.Flags().StringP("scope", "s", "", "Commit scope.")
 }
 
@@ -69,11 +70,6 @@ func commit(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	body, err := cmd.Flags().GetString("body")
-	if err != nil {
-		return err
-	}
-
 	bc, err := cmd.Flags().GetBool("breaking-changes")
 	if err != nil {
 		return err
@@ -85,8 +81,17 @@ func commit(cmd *cobra.Command, args []string) error {
 	}
 
 	cmsg := format.CommitMessage(&format.CommitMessageOption{
-		Ctype: ctype, Body: body, BreakingChanges: bc, Description: msg, Scope: scope,
+		Ctype: ctype, BreakingChanges: bc, Description: msg, Scope: scope,
 	})
+
+	edit, err := cmd.Flags().GetBool("edit")
+	if err != nil {
+		return err
+	}
+
+	if edit {
+		cmsg = promptEditor(cmsg)
+	}
 
 	// Commit
 	w, err := ctx.Repo.Worktree()
@@ -119,13 +124,15 @@ func validateCommitType(cmd *cobra.Command) (format.CommitType, error) {
 		return format.NilCommit, nil
 	case "b":
 		return format.BuildCommit, nil
-	case "c":
+	case "ch":
+		return format.ChoreCommit, nil
+	case "ci":
 		return format.CiCommit, nil
 	case "d":
 		return format.DocCommit, nil
-	case "e":
+	case "fe":
 		return format.FeatureCommit, nil
-	case "f":
+	case "fi":
 		return format.FixCommit, nil
 	case "p":
 		return format.PerfCommit, nil
@@ -138,6 +145,17 @@ func validateCommitType(cmd *cobra.Command) (format.CommitType, error) {
 	default:
 		return -1, fmt.Errorf("%s is not a commit type, allowed values are b, c, d, e, f, p, r, s, t", ctype)
 	}
+}
+
+func promptEditor(msg string) string {
+	prompt := &survey.Editor{
+		Message:       "Edit commit message",
+		Default:       msg,
+		AppendDefault: true,
+		FileName:      "COMMIT_EDITMSG*",
+	}
+	survey.AskOne(prompt, &msg)
+	return msg
 }
 
 func guessCommitType(msg string, ctx *context.Context) (format.CommitType, error) {

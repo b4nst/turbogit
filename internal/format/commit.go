@@ -11,6 +11,7 @@ type CommitType int
 const (
 	BuildCommit CommitType = iota
 	CiCommit
+	ChoreCommit
 	DocCommit
 	FeatureCommit
 	FixCommit
@@ -22,7 +23,7 @@ const (
 )
 
 func (b CommitType) String() string {
-	return [...]string{"build", "ci", "docs", "feat", "fix", "", "perf", "refactor", "style", "test"}[b]
+	return [...]string{"build", "ci", "chore", "docs", "feat", "fix", "", "perf", "refactor", "style", "test"}[b]
 }
 
 type CommitMessageOption struct {
