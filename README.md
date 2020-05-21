@@ -27,6 +27,6 @@ Flags:
   -h, --help            help for tug
 ```
 
-## Instal
+## Install
 
 Prebuilt binary available on the [release page](https://github.com/b4nst/turbogit/releases/latest).
