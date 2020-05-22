@@ -3,6 +3,7 @@ package format
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/b4nst/turbogit/internal/constants"
 )
@@ -25,6 +26,22 @@ const (
 
 func (b CommitType) String() string {
 	return [...]string{"build", "ci", "chore", "docs", "feat", "fix", "", "perf", "refactor", "style", "test"}[b]
+}
+
+func AllCommitType() string {
+	types := []string{
+		BuildCommit.String(),
+		CiCommit.String(),
+		ChoreCommit.String(),
+		DocCommit.String(),
+		FeatureCommit.String(),
+		FixCommit.String(),
+		PerfCommit.String(),
+		RefactorCommit.String(),
+		StyleCommit.String(),
+		TestCommit.String(),
+	}
+	return strings.Join(types, ", ")
 }
 
 var (

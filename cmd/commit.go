@@ -37,7 +37,7 @@ import (
 func init() {
 	rootCmd.AddCommand(commitCmd)
 
-	commitCmd.Flags().StringP("type", "t", "", "Commit type : [b]uild, [ch]ore, [ci], [d]ocs, [fe]at, [fi]x, [p]erf, [r]efactor, [s]tyle, [t]est")
+	commitCmd.Flags().StringP("type", "t", "", fmt.Sprintf("Commit types: %s", format.AllCommitType()))
 	commitCmd.Flags().BoolP("breaking-changes", "c", false, "Commit contains breaking changes")
 	commitCmd.Flags().BoolP("edit", "e", false, "Prompt editor to edit your message (add body or/and footer(s)).")
 	commitCmd.Flags().StringP("scope", "s", "", "Commit scope.")
@@ -45,7 +45,7 @@ func init() {
 
 // commitCmd represents the commit command
 var commitCmd = &cobra.Command{
-	Use:   "commit [subject]",
+	Use:   "commit [[type] subject]",
 	Short: "Create a new commit.",
 	Args:  cobra.MinimumNArgs(1),
 	RunE:  commit,
@@ -57,17 +57,18 @@ func commit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	msg := strings.Join(args, " ")
-
-	ctype, err := validateCommitType(cmd)
+	typeFlag, err := cmd.Flags().GetString("type")
 	if err != nil {
 		return err
 	}
+	if typeFlag == "" {
+		typeFlag = args[0]
+		args = args[1:]
+	}
+
+	ctype := format.FindCommitType(typeFlag)
 	if ctype == format.NilCommit {
-		ctype, err = guessCommitType(msg, ctx)
-		if err != nil {
-			return err
-		}
+		return fmt.Errorf("'%s' is not a valid commit type", typeFlag)
 	}
 
 	bc, err := cmd.Flags().GetBool("breaking-changes")
@@ -80,6 +81,7 @@ func commit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	msg := strings.Join(args, " ")
 	cmsg := format.CommitMessage(&format.CommitMessageOption{
 		Ctype: ctype, BreakingChanges: bc, Description: msg, Scope: scope,
 	})
@@ -112,41 +114,6 @@ func commit(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func validateCommitType(cmd *cobra.Command) (format.CommitType, error) {
-	ctype, err := cmd.Flags().GetString("type")
-	if err != nil {
-		return -1, err
-	}
-
-	// TODO refator that mess with a proper map
-	switch ctype {
-	case "":
-		return format.NilCommit, nil
-	case "b":
-		return format.BuildCommit, nil
-	case "ch":
-		return format.ChoreCommit, nil
-	case "ci":
-		return format.CiCommit, nil
-	case "d":
-		return format.DocCommit, nil
-	case "fe":
-		return format.FeatureCommit, nil
-	case "fi":
-		return format.FixCommit, nil
-	case "p":
-		return format.PerfCommit, nil
-	case "r":
-		return format.RefactorCommit, nil
-	case "s":
-		return format.StyleCommit, nil
-	case "t":
-		return format.TestCommit, nil
-	default:
-		return -1, fmt.Errorf("%s is not a commit type, allowed values are b, c, d, e, f, p, r, s, t", ctype)
-	}
-}
-
 func promptEditor(msg string) string {
 	prompt := &survey.Editor{
 		Message:       "Edit commit message",
@@ -156,9 +123,4 @@ func promptEditor(msg string) string {
 	}
 	survey.AskOne(prompt, &msg)
 	return msg
-}
-
-func guessCommitType(msg string, ctx *context.Context) (format.CommitType, error) {
-	// TODO implement guessing feature
-	return format.FeatureCommit, nil
 }
