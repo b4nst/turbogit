@@ -27,6 +27,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/b4nst/turbogit/internal/context"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -39,7 +40,10 @@ var configCmd = &cobra.Command{
 	Args:          cobra.RangeArgs(1, 2),
 	SilenceUsage:  true,
 	SilenceErrors: true,
-	RunE:          config,
+	PreRun: func(cmd *cobra.Command, args []string) {
+		context.FromCommand(cmd)
+	},
+	RunE: config,
 }
 
 func init() {

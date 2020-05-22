@@ -27,7 +27,7 @@ func FromCommand(cmd *cobra.Command) (*Context, error) {
 }
 
 func getUsername(r *git.Repository) string {
-	username := viper.GetString("username")
+	username := viper.GetString("user.name")
 
 	if username == "" {
 		cfg, err := r.Config()
@@ -35,6 +35,7 @@ func getUsername(r *git.Repository) string {
 			username = ""
 		} else {
 			username = cfg.Raw.Section("user").Option("name") // Switch to cfg.Merged when https://github.com/go-git/go-git/pull/20 is released
+			viper.Set("user.name", username)
 		}
 	}
 
@@ -42,7 +43,7 @@ func getUsername(r *git.Repository) string {
 }
 
 func getEmail(r *git.Repository) string {
-	email := viper.GetString("email")
+	email := viper.GetString("user.email")
 
 	if email == "" {
 		cfg, err := r.Config()
@@ -50,6 +51,7 @@ func getEmail(r *git.Repository) string {
 			email = ""
 		} else {
 			email = cfg.Raw.Section("user").Option("email") // Switch to cfg.Merged when https://github.com/go-git/go-git/pull/20 is released
+			viper.Set("user.email", email)
 		}
 	}
 
