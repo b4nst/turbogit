@@ -2,6 +2,7 @@ package format
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/b4nst/turbogit/internal/constants"
 )
@@ -25,6 +26,19 @@ const (
 func (b CommitType) String() string {
 	return [...]string{"build", "ci", "chore", "docs", "feat", "fix", "", "perf", "refactor", "style", "test"}[b]
 }
+
+var (
+	buildCommitRe    = regexp.MustCompile(`(?i)^b(?:uilds?)?$`)
+	ciCommitRe       = regexp.MustCompile(`(?i)^ci$`)
+	choreCommitRe    = regexp.MustCompile(`(?i)^ch(?:ores?)?$`)
+	docCommitRe      = regexp.MustCompile(`(?i)^d(?:ocs?)?$`)
+	featureCommitRe  = regexp.MustCompile(`(?i)^fe(?:at(?:ure)?s?)?$`)
+	fixCommitRe      = regexp.MustCompile(`(?i)^fi(?:x(?:es)?)?$`)
+	perfCommitRe     = regexp.MustCompile(`(?i)^p(?:erf(:?ormance)?s?)?$`)
+	refactorCommitRe = regexp.MustCompile(`(?i)^r(?:efactors?)?$`)
+	styleCommitRe    = regexp.MustCompile(`(?i)^s(?:tyles?)?$`)
+	testCommitRe     = regexp.MustCompile(`(?i)^t(?:ests?)?$`)
+)
 
 type CommitMessageOption struct {
 	// Commit type (optional)
@@ -67,4 +81,33 @@ func CommitMessage(o *CommitMessageOption) string {
 	}
 
 	return msg
+}
+
+// Extract type from string
+func FindCommitType(str string) CommitType {
+	s := []byte(str)
+	switch {
+	case buildCommitRe.Match(s):
+		return BuildCommit
+	case ciCommitRe.Match(s):
+		return CiCommit
+	case choreCommitRe.Match(s):
+		return ChoreCommit
+	case docCommitRe.Match(s):
+		return DocCommit
+	case featureCommitRe.Match(s):
+		return FeatureCommit
+	case fixCommitRe.Match(s):
+		return FixCommit
+	case perfCommitRe.Match(s):
+		return PerfCommit
+	case refactorCommitRe.Match(s):
+		return RefactorCommit
+	case styleCommitRe.Match(s):
+		return StyleCommit
+	case testCommitRe.Match(s):
+		return TestCommit
+	default:
+		return NilCommit
+	}
 }

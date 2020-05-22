@@ -35,3 +35,60 @@ func TestCommitMessage(t *testing.T) {
 		})
 	}
 }
+
+func TestFindCommitType(t *testing.T) {
+	tcs := map[string]struct {
+		str      string
+		expected CommitType
+	}{
+		"Nil": {"fail", NilCommit},
+
+		"B":      {"b", BuildCommit},
+		"Build":  {"bUild", BuildCommit},
+		"Builds": {"builds", BuildCommit},
+
+		"Ci": {"ci", CiCommit},
+
+		"Ch":     {"ch", ChoreCommit},
+		"Chore":  {"chore", ChoreCommit},
+		"Chores": {"chOreS", ChoreCommit},
+
+		"D":    {"d", DocCommit},
+		"Doc":  {"Doc", DocCommit},
+		"Docs": {"docs", DocCommit},
+
+		"Fe":       {"fe", FeatureCommit},
+		"Feat":     {"feAt", FeatureCommit},
+		"Feats":    {"feats", FeatureCommit},
+		"Feature":  {"feature", FeatureCommit},
+		"Features": {"features", FeatureCommit},
+
+		"Fi":    {"fi", FixCommit},
+		"Fix":   {"Fix", FixCommit},
+		"Fixes": {"fixEs", FixCommit},
+
+		"P":            {"p", PerfCommit},
+		"Perf":         {"perf", PerfCommit},
+		"Perfs":        {"pErFs", PerfCommit},
+		"Performance":  {"performance", PerfCommit},
+		"Performances": {"performances", PerfCommit},
+
+		"R":         {"r", RefactorCommit},
+		"Refactor":  {"reFactor", RefactorCommit},
+		"Refactors": {"reFactors", RefactorCommit},
+
+		"S":      {"s", StyleCommit},
+		"Style":  {"style", StyleCommit},
+		"Styles": {"stYles", StyleCommit},
+
+		"T":     {"t", TestCommit},
+		"Test":  {"Test", TestCommit},
+		"Tests": {"tests", TestCommit},
+	}
+
+	for name, tc := range tcs {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, FindCommitType(tc.str))
+		})
+	}
+}
