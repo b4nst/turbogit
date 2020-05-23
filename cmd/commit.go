@@ -58,11 +58,12 @@ var commitCmd = &cobra.Command{
 }
 
 func commit(cmd *cobra.Command, args []string) error {
+	// Get context
 	ctx, err := context.FromCommand(cmd)
 	if err != nil {
 		return err
 	}
-
+	// Parse flags
 	typeFlag, err := cmd.Flags().GetString("type")
 	if err != nil {
 		return err
@@ -71,37 +72,42 @@ func commit(cmd *cobra.Command, args []string) error {
 		typeFlag = args[0]
 		args = args[1:]
 	}
-
-	ctype := format.FindCommitType(typeFlag)
-	if ctype == format.NilCommit {
-		return fmt.Errorf("'%s' is not a valid commit type", typeFlag)
-	}
-
 	bc, err := cmd.Flags().GetBool("breaking-changes")
 	if err != nil {
 		return err
 	}
-
 	scope, err := cmd.Flags().GetString("scope")
 	if err != nil {
 		return err
 	}
-
-	msg := strings.Join(args, " ")
-	cmsg := format.CommitMessage(&format.CommitMessageOption{
-		Ctype: ctype, BreakingChanges: bc, Description: msg, Scope: scope,
-	})
-
 	edit, err := cmd.Flags().GetBool("edit")
 	if err != nil {
 		return err
 	}
 
+	// Parse commit type
+	ctype := format.FindCommitType(typeFlag)
+	if ctype == format.NilCommit {
+		return fmt.Errorf("'%s' is not a valid commit type", typeFlag)
+	}
+	// Create message
+	msg := strings.Join(args, " ")
+	cmsg := format.CommitMessage(&format.CommitMessageOption{
+		Ctype: ctype, BreakingChanges: bc, Description: msg, Scope: scope,
+	})
 	if edit {
 		cmsg = promptEditor(cmsg)
 	}
 
-	// Commit
+	// Write commit
+	if err := writeCommit(ctx, cmsg); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func writeCommit(ctx *context.Context, msg string) error {
 	w, err := ctx.Repo.Worktree()
 	if err != nil {
 		return err
@@ -113,7 +119,7 @@ func commit(cmd *cobra.Command, args []string) error {
 		When:  time.Now(),
 	}
 
-	if _, err := w.Commit(cmsg, &git.CommitOptions{Author: &author}); err != nil {
+	if _, err := w.Commit(msg, &git.CommitOptions{Author: &author}); err != nil {
 		return err
 	}
 
