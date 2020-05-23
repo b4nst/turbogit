@@ -31,11 +31,19 @@ jobs:
       - name: Build
         run: make build
 
+      - name: Download codeclimate reporter
+        run: wget -O cc-reporter https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 && chmod +x cc-reporter
+
+      - name: Prepare code coverage
+        run: ./cc-reporter before-build
+
       - name: Test
         run: make test
 
-      - uses: paambaati/codeclimate-action@v2.6.0
+      - name: Format code coverage
+        run: ./cc-reporter format-coverage c.out -t gocov -p $(basename $PWD)
+
+      - name: Upload code coverage
         env:
           CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
-        with:
-          coverageCommand: make test
+        run: ./cc-reporter after-build -t gocov -p $(basename $PWD)
