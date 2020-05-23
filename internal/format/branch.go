@@ -1,6 +1,7 @@
 package format
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -14,7 +15,28 @@ const (
 )
 
 func (b BranchType) String() string {
-	return [...]string{"features", "fix", "users"}[b]
+	return [...]string{"feat", "fix", "user"}[b]
+}
+
+func AllBranchType() []string {
+	return []string{
+		FeatureBranch.String(),
+		FixBranch.String(),
+		UserBranch.String(),
+	}
+}
+
+func BranchTypeFrom(str string) (BranchType, error) {
+	switch str {
+	case FeatureBranch.String():
+		return FeatureBranch, nil
+	case FixBranch.String():
+		return FixBranch, nil
+	case UserBranch.String():
+		return UserBranch, nil
+	default:
+		return -1, fmt.Errorf("%s is not a branch type, allowed values are f,p and u", str)
+	}
 }
 
 var (

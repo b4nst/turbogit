@@ -36,17 +36,14 @@ import (
 
 func init() {
 	rootCmd.AddCommand(branchCmd)
-
-	branchCmd.Flags().StringP("type", "t", "f", "Branch type ([f]eature,[p]atch or [u]ser).")
 }
 
 var branchCmd = &cobra.Command{
-	Use:           "branch [description]",
-	Short:         "Create a new branch.",
-	SilenceUsage:  false,
-	SilenceErrors: true,
-	Args:          validateArgs,
-	RunE:          branch,
+	Use:       fmt.Sprintf("branch [%s] [description]", strings.Join(format.AllBranchType(), "|")),
+	Short:     "Create a new branch.",
+	Args:      cobra.MinimumNArgs(1),
+	ValidArgs: format.AllBranchType(),
+	RunE:      branch,
 }
 
 func branch(cmd *cobra.Command, args []string) error {
@@ -55,9 +52,12 @@ func branch(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	btype, err := validateBranchType(cmd)
+	btype, err := format.BranchTypeFrom(args[0])
 	if err != nil {
 		return err
+	}
+	if btype != format.UserBranch && len(args) < 2 {
+		return fmt.Errorf("%s branches need a description.", btype)
 	}
 
 	headRef, err := ctx.Repo.Head()
@@ -69,7 +69,7 @@ func branch(cmd *cobra.Command, args []string) error {
 	if btype == format.UserBranch && ctx.Username == "" {
 		return errors.New("You need to configure your username before creating a user branch.")
 	}
-	d := strings.Join(args, "-")
+	d := strings.Join(args[1:], "-")
 	branch_name := plumbing.NewBranchReferenceName(format.BranchName(btype, d, ctx.Username))
 
 	// Create new branch
@@ -88,33 +88,4 @@ func branch(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
-}
-
-func validateArgs(cmd *cobra.Command, args []string) error {
-	btype, err := cmd.Flags().GetString("type")
-	if err != nil {
-		return err
-	}
-	if btype != "u" && len(args) < 1 {
-		return fmt.Errorf("Type %s requires a description.", btype)
-	}
-	return nil
-}
-
-func validateBranchType(cmd *cobra.Command) (format.BranchType, error) {
-	btype, err := cmd.Flags().GetString("type")
-	if err != nil {
-		return -1, err
-	}
-
-	switch btype {
-	case "f":
-		return format.FeatureBranch, nil
-	case "p":
-		return format.FixBranch, nil
-	case "u":
-		return format.UserBranch, nil
-	default:
-		return -1, fmt.Errorf("%s is not a branch type, allowed values are f,p and u", btype)
-	}
 }

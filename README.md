@@ -6,10 +6,9 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/5173f55b5e67109d3ca5/maintainability)](https://codeclimate.com/github/b4nst/turbogit/maintainability)
 ![dependabot](https://api.dependabot.com/badges/status?host=github&repo=b4nst/turbogit)
 
-tug is a cli tool built to help you deal with your day-to-day git work. tug enforces convention (e.g. [The Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)) but tries to keep things simple and invisible for you. tug is your friend.
-
-
 ![logo](assets/tu_logo.png)
+
+tug is a cli tool built to help you deal with your day-to-day git work. tug enforces convention (e.g. [The Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)) but tries to keep things simple and invisible for you. tug is your friend.
 
 
 ## Usage
@@ -21,16 +20,12 @@ Usage:
 Available Commands:
   branch      Create a new branch.
   commit      Create a new commit.
-  completion  Generate completion script
   config      Read or write config.
   help        Help about any command
-  version     Print current version.
 
 Flags:
       --config string   config file (default is $HOME/.config/tug/tug.toml)
   -h, --help            help for tug
-
-Use "tug [command] --help" for more information about a command.
 ```
 
 ## Install
