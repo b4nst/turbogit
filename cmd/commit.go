@@ -37,18 +37,24 @@ import (
 func init() {
 	rootCmd.AddCommand(commitCmd)
 
-	commitCmd.Flags().StringP("type", "t", "", fmt.Sprintf("Commit types: %s", format.AllCommitType()))
+	commitCmd.Flags().StringP("type", "t", "", fmt.Sprintf("Commit types %s.", format.AllCommitType()))
+	commitCmd.RegisterFlagCompletionFunc("type", typeFlagCompletion)
 	commitCmd.Flags().BoolP("breaking-changes", "c", false, "Commit contains breaking changes")
 	commitCmd.Flags().BoolP("edit", "e", false, "Prompt editor to edit your message (add body or/and footer(s)).")
 	commitCmd.Flags().StringP("scope", "s", "", "Commit scope.")
 }
 
+func typeFlagCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return format.AllCommitType(), cobra.ShellCompDirectiveDefault
+}
+
 // commitCmd represents the commit command
 var commitCmd = &cobra.Command{
-	Use:   "commit [[type] subject]",
-	Short: "Create a new commit.",
-	Args:  cobra.MinimumNArgs(1),
-	RunE:  commit,
+	Use:       "commit [[type] subject]",
+	Short:     "Create a new commit.",
+	Args:      cobra.MinimumNArgs(1),
+	RunE:      commit,
+	ValidArgs: format.AllCommitType(),
 }
 
 func commit(cmd *cobra.Command, args []string) error {
