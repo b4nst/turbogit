@@ -1,6 +1,6 @@
 fileignoreconfig:
 - filename: go.sum
-  checksum: 780058a786fec4d64ba3b7c66fec8a94a346f3adf8917d9fc1f785d0ebc99a69
+  checksum: 5fa31794234412276f7823eff6b3e9afe6588577ad8fd9f233248b607fd67d0f
   ignore_detectors: []
 - filename: assets/tu_logo.ai
   checksum: 914c8f4d7cefc065c7826d91ca686825382b8a49b52c23c6a10a445df16869b6
