@@ -36,6 +36,12 @@ const (
 	BIN_NAME = "tug"
 )
 
+var (
+	Version   = "dev"
+	Commit    = "nil"
+	BuildDate = "nil"
+)
+
 var cfgFile string
 
 var rootCmd = &cobra.Command{
