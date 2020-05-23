@@ -23,10 +23,10 @@ func FromCommand(cmd *cobra.Command) (*Context, error) {
 		return nil, err
 	}
 
-	return &Context{Username: getUsername(r), Email: getEmail(r), Repo: r}, nil
+	return &Context{Username: username(r), Email: email(r), Repo: r}, nil
 }
 
-func getUsername(r *git.Repository) string {
+func username(r *git.Repository) string {
 	username := viper.GetString("user.name")
 
 	if username == "" {
@@ -42,7 +42,7 @@ func getUsername(r *git.Repository) string {
 	return username
 }
 
-func getEmail(r *git.Repository) string {
+func email(r *git.Repository) string {
 	email := viper.GetString("user.email")
 
 	if email == "" {

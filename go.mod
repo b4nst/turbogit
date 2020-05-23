@@ -8,5 +8,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/viper v1.7.0
+	github.com/src-d/gcfg v1.4.0 // indirect
 	github.com/stretchr/testify v1.5.1
+	github.com/go-git/go-git v4.7.0+incompatible
 )
