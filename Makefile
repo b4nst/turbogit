@@ -11,5 +11,5 @@ build: bin/tug
 .PHONY: build
 
 test: $(BUILD_FILES)
-	$(GOTEST) ./...
+	$(GOTEST) ./...  -coverprofile c.out
 .PHONY: test
