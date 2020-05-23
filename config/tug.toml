@@ -1,0 +1,5 @@
+# User config
+# If not found here, tug will search in git config
+[user]
+# name = "bob"
+# email = "bob@company.com"
