@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUsername(t *testing.T) {
+func TestViperOrGit(t *testing.T) {
 	r, teardown, err := setUp()
 	defer teardown()
 	if err != nil {
@@ -22,30 +22,9 @@ func TestUsername(t *testing.T) {
 	}
 	cfg.Raw.AddOption("user", config.NoSubsection, "name", "bob")
 	r.Storer.SetConfig(cfg)
-	assert.Equal(t, "bob", username(r))
+	assert.Equal(t, "bob", viperOrGit("user", "name", r))
 
 	// With viper
 	viper.Set("user.name", "alice")
-	assert.Equal(t, "alice", username(r))
-}
-
-func TestEmail(t *testing.T) {
-	r, teardown, err := setUp()
-	defer teardown()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// With git
-	cfg, err := r.Config()
-	if err != nil {
-		t.Fatal(err)
-	}
-	cfg.Raw.AddOption("user", config.NoSubsection, "email", "bob@company.com")
-	r.Storer.SetConfig(cfg)
-	assert.Equal(t, "bob@company.com", email(r))
-
-	// With viper
-	viper.Set("user.email", "alice@company.com")
-	assert.Equal(t, "alice@company.com", email(r))
+	assert.Equal(t, "alice", viperOrGit("user", "name", r))
 }

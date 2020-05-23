@@ -1,6 +1,8 @@
 package context
 
 import (
+	"fmt"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -23,37 +25,22 @@ func FromCommand(cmd *cobra.Command) (*Context, error) {
 		return nil, err
 	}
 
-	return &Context{Username: username(r), Email: email(r), Repo: r}, nil
+	return &Context{Username: viperOrGit("user", "name", r), Email: viperOrGit("user", "email", r), Repo: r}, nil
 }
 
-func username(r *git.Repository) string {
-	username := viper.GetString("user.name")
+func viperOrGit(section string, option string, r *git.Repository) string {
+	vk := fmt.Sprintf("%s.%s", section, option)
+	value := viper.GetString(vk)
 
-	if username == "" {
+	if value == "" {
 		cfg, err := r.Config()
 		if err != nil {
-			username = ""
+			value = ""
 		} else {
-			username = cfg.Raw.Section("user").Option("name") // Switch to cfg.Merged when https://github.com/go-git/go-git/pull/20 is released
-			viper.Set("user.name", username)
+			value = cfg.Raw.Section(section).Option(option) // Switch to cfg.Merged when https://github.com/go-git/go-git/pull/20 is released
+			viper.Set(vk, value)
 		}
 	}
 
-	return username
-}
-
-func email(r *git.Repository) string {
-	email := viper.GetString("user.email")
-
-	if email == "" {
-		cfg, err := r.Config()
-		if err != nil {
-			email = ""
-		} else {
-			email = cfg.Raw.Section("user").Option("email") // Switch to cfg.Merged when https://github.com/go-git/go-git/pull/20 is released
-			viper.Set("user.email", email)
-		}
-	}
-
-	return email
+	return value
 }
