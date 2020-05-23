@@ -21,12 +21,16 @@ Usage:
 Available Commands:
   branch      Create a new branch.
   commit      Create a new commit.
+  completion  Generate completion script
   config      Read or write config.
   help        Help about any command
+  version     Print current version.
 
 Flags:
       --config string   config file (default is $HOME/.config/tug/tug.toml)
   -h, --help            help for tug
+
+Use "tug [command] --help" for more information about a command.
 ```
 
 ## Install
