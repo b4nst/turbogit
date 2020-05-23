@@ -24,3 +24,10 @@ jobs:
           args: release --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.UPLOAD_GITHUB_TOKEN }}
+      - name: Bump homebrew-core formula
+        uses: mislav/bump-homebrew-formula-action@v1
+        if: "!contains(github.ref, '-')" # skip prereleases
+        with:
+          formula-name: turbogit
+        env:
+          COMMITTER_TOKEN: ${{ secrets.UPLOAD_GITHUB_TOKEN }}
