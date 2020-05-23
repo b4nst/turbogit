@@ -40,10 +40,7 @@ jobs:
       - name: Test
         run: make test
 
-      - name: Format code coverage
-        run: ./cc-reporter format-coverage c.out -t gocov
-
       - name: Upload code coverage
         env:
           CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
-        run: ./cc-reporter after-build -t gocov
+        run: ./cc-reporter after-build --coverage-input-type gocov
