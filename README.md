@@ -91,7 +91,7 @@ Download the .rpm file from the [releases page](https://github.com/b4nst/turbogi
 sudo zypper in ./turbogit_*_linux_amd64.rpm
 ```
 ### Windows
-`turbogit` is available via (scoop)[https://scoop.sh].
+`turbogit` is available via [scoop](https://scoop.sh).
 ```shell
 scoop bucket add scoop-bucket https://github.com/b4nst/scoop-bucket.git
 scoop install turbogit
