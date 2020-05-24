@@ -75,7 +75,7 @@ brews:
       name: homebrew-tap
     folder: Formula
     homepage: "https://github.com/b4nst/turbogit"
-    description: "Cli tool built to help you deal with your day-to-day git work."
+    description: "Cli tool built to help you deal with your day-to-day git work"
     skip_upload: auto
     # Custom block for brew.
     # Used to specify alternate downloads for devel or head releases.
