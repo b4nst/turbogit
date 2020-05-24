@@ -27,6 +27,7 @@ tug is a cli tool built to help you deal with your day-to-day git work. tug enfo
   - [Bash](#bash)
   - [Zsh](#zsh)
   - [Fish](#fish)
+- [Contributing](#contributing)
 
 ## Usage
 
@@ -132,3 +133,7 @@ To load completions for each session, execute once:
 ```shell
 tug completion fish > ~/.config/fish/completions/tug.fish
 ```
+
+## Contributing
+
+Thanks for getting involved in turbogit ❤️! Please read the [Contributing guide](CONTRIBUTING.md), it will help you make your awesome contribution.
