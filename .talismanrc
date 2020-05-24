@@ -5,4 +5,7 @@ fileignoreconfig:
 - filename: assets/tu_logo.ai
   checksum: 914c8f4d7cefc065c7826d91ca686825382b8a49b52c23c6a10a445df16869b6
   ignore_detectors: []
+- filename: assets/tu_social.ai
+  checksum: b8093b4dd7767038ad955b9a2352a664877940dd4efebfdfa85e12d709044db5
+  ignore_detectors: []
 scopeconfig: []
