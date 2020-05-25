@@ -3,7 +3,7 @@ package context
 import (
 	"testing"
 
-	"github.com/go-git/go-git/plumbing/format/config"
+	"github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )
