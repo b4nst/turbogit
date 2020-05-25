@@ -22,6 +22,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -60,20 +61,25 @@ $ tug completion fish > ~/.config/fish/completions/tug.fish
 	DisableFlagsInUseLine: true,
 	ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
 	Args:                  cobra.ExactValidArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		switch args[0] {
-		case "bash":
-			cmd.Root().GenBashCompletion(os.Stdout)
-		case "zsh":
-			cmd.Root().GenZshCompletion(os.Stdout)
-		case "fish":
-			cmd.Root().GenFishCompletion(os.Stdout, true)
-		case "powershell":
-			cmd.Root().GenPowerShellCompletion(os.Stdout)
-		}
-	},
+	RunE:                  completion,
 }
 
 func init() {
 	rootCmd.AddCommand(completionCmd)
+}
+
+func completion(cmd *cobra.Command, args []string) error {
+	switch args[0] {
+	case "bash":
+		cmd.Root().GenBashCompletion(os.Stdout)
+	case "zsh":
+		cmd.Root().GenZshCompletion(os.Stdout)
+	case "fish":
+		cmd.Root().GenFishCompletion(os.Stdout, true)
+	case "powershell":
+		cmd.Root().GenPowerShellCompletion(os.Stdout)
+	default:
+		return fmt.Errorf("%s is not a supported shell", args[0])
+	}
+	return nil
 }
