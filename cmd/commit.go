@@ -24,13 +24,11 @@ package cmd
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/b4nst/turbogit/internal/context"
 	"github.com/b4nst/turbogit/internal/format"
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/spf13/cobra"
 )
 
@@ -113,13 +111,7 @@ func writeCommit(ctx *context.Context, msg string) error {
 		return err
 	}
 
-	author := object.Signature{
-		Name:  ctx.Username,
-		Email: ctx.Email,
-		When:  time.Now(),
-	}
-
-	if _, err := w.Commit(msg, &git.CommitOptions{Author: &author}); err != nil {
+	if _, err := w.Commit(msg, &git.CommitOptions{}); err != nil {
 		return err
 	}
 

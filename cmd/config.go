@@ -43,7 +43,7 @@ var configCmd = &cobra.Command{
 	PreRun: func(cmd *cobra.Command, args []string) {
 		context.FromCommand(cmd)
 	},
-	RunE: config,
+	RunE: configure,
 }
 
 func init() {
@@ -52,7 +52,7 @@ func init() {
 	configCmd.Flags().BoolP("delete", "d", false, "Delete config.")
 }
 
-func config(cmd *cobra.Command, args []string) error {
+func configure(cmd *cobra.Command, args []string) error {
 	delete, err := cmd.Flags().GetBool("delete")
 	if err != nil {
 		return err

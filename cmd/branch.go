@@ -30,6 +30,7 @@ import (
 	"github.com/b4nst/turbogit/internal/format"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/spf13/cobra"
 )
@@ -66,11 +67,12 @@ func branch(cmd *cobra.Command, args []string) error {
 	}
 
 	// Format branch name
-	if btype == format.UserBranch && ctx.Username == "" {
+	cfg, err := ctx.Repo.ConfigScoped(config.SystemScope)
+	if btype == format.UserBranch && cfg.User.Name == "" {
 		return errors.New("You need to configure your username before creating a user branch.")
 	}
 	d := strings.Join(args[1:], "-")
-	branch_name := plumbing.NewBranchReferenceName(format.BranchName(btype, d, ctx.Username))
+	branch_name := plumbing.NewBranchReferenceName(format.BranchName(btype, d, cfg.User.Name))
 
 	// Create new branch
 	ref := plumbing.NewHashReference(branch_name, headRef.Hash())
