@@ -4,10 +4,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/config"
 )
 
 func setUpRepo() (r *git.Repository, teardown func(), err error) {
@@ -54,13 +53,15 @@ func setUpRepo() (r *git.Repository, teardown func(), err error) {
 		return nil, teardown, err
 	}
 
-	_, err = w.Commit("example go-git commit", &git.CommitOptions{
-		Author: &object.Signature{
-			Name:  "John Doe",
-			Email: "john@doe.org",
-			When:  time.Now(),
-		},
-	})
+	cfg, err := r.ConfigScoped(config.SystemScope)
+	if err != nil {
+		return nil, teardown, err
+	}
+	cfg.Author.Name = "John Doe"
+	cfg.Author.Email = "john@doe.org"
+	r.SetConfig(cfg)
+
+	_, err = w.Commit("example go-git commit", &git.CommitOptions{})
 	if err != nil {
 		return nil, teardown, err
 	}
