@@ -22,6 +22,7 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -83,6 +84,16 @@ func commit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Check if working tree is clean
+	nc, err := needCommit(ctx)
+	if err != nil {
+		return err
+	}
+	if !nc {
+		fmt.Println("nothing to commit, working tree clean")
+		return nil
+	}
+
 	// Parse commit type
 	ctype := format.FindCommitType(typeFlag)
 	if ctype == format.NilCommit {
@@ -104,6 +115,57 @@ func commit(cmd *cobra.Command, args []string) error {
 
 	return nil
 }
+
+func needCommit(ctx *context.Context) (bool, error) {
+	wt, err := ctx.Repo.Worktree()
+	if err != nil {
+		return false, err
+	}
+	status, err := wt.Status()
+	if err != nil {
+		return false, err
+	}
+
+	for _, s := range status {
+		if s.Staging != git.Unmodified && s.Staging != git.Untracked {
+			return true, nil
+		}
+		if s.Worktree != git.Unmodified {
+			return false, errors.New("no changes added to commit")
+		}
+	}
+	return false, nil
+}
+
+// func isStageClean(ctx *context.Context) (bool, error) {
+// 	wt, err := ctx.Repo.Worktree()
+// 	if err != nil {
+// 		return false, err
+// 	}
+// 	status, err := wt.Status()
+// 	if err != nil {
+// 		return false, err
+// 	}
+
+// 	for _, s := range status {
+// 		if s.Staging != git.Unmodified && s.Staging == git.Untracked {
+// 			return false, nil
+// 		}
+// 	}
+// 	return true, nil
+// }
+
+// func isWorkingTreeClean(ctx *context.Context) (bool, error) {
+// 	wt, err := ctx.Repo.Worktree()
+// 	if err != nil {
+// 		return false, err
+// 	}
+// 	status, err := wt.Status()
+// 	if err != nil {
+// 		return false, err
+// 	}
+// 	return status.IsClean(), nil
+// }
 
 func writeCommit(ctx *context.Context, msg string) error {
 	w, err := ctx.Repo.Worktree()
