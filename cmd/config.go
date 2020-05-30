@@ -72,7 +72,6 @@ func configure(cmd *cobra.Command, args []string) error {
 		}
 		// Write config
 		if err := viper.WriteConfig(); err != nil {
-			fmt.Println(err)
 			return err
 		}
 		fmt.Println("Written to :", viper.ConfigFileUsed())
