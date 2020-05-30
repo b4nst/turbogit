@@ -23,7 +23,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -71,13 +70,13 @@ func init() {
 func completion(cmd *cobra.Command, args []string) error {
 	switch args[0] {
 	case "bash":
-		cmd.Root().GenBashCompletion(os.Stdout)
+		cmd.Root().GenBashCompletion(cmd.OutOrStdout())
 	case "zsh":
-		cmd.Root().GenZshCompletion(os.Stdout)
+		cmd.Root().GenZshCompletion(cmd.OutOrStdout())
 	case "fish":
-		cmd.Root().GenFishCompletion(os.Stdout, true)
+		cmd.Root().GenFishCompletion(cmd.OutOrStdout(), true)
 	case "powershell":
-		cmd.Root().GenPowerShellCompletion(os.Stdout)
+		cmd.Root().GenPowerShellCompletion(cmd.OutOrStdout())
 	default:
 		return fmt.Errorf("%s is not a supported shell", args[0])
 	}
