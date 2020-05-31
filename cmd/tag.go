@@ -26,11 +26,16 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/b4nst/turbogit/internal/format"
 	"github.com/blang/semver/v4"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/storer"
 	"github.com/spf13/cobra"
+)
+
+const (
+	TAG_PREFIX = "v"
 )
 
 var tagCmd = &cobra.Command{
@@ -71,7 +76,7 @@ func filterSemver(it storer.ReferenceIter) (Tags, error) {
 	tags := Tags{}
 
 	filter := func(ref *plumbing.Reference) error {
-		v, err := semver.Make(strings.TrimLeft(ref.Name().Short(), "v"))
+		v, err := semver.Make(strings.TrimLeft(ref.Name().Short(), TAG_PREFIX))
 		if err != nil {
 			return err
 		}
@@ -87,7 +92,7 @@ func filterSemver(it storer.ReferenceIter) (Tags, error) {
 }
 
 // Return the last Semver tag or nil if
-func getLastTag(r *git.Repository) (*Tag, error) {
+func lastTag(r *git.Repository) (*Tag, error) {
 	iter, err := r.Tags()
 	if err != nil {
 		return nil, err
@@ -103,4 +108,44 @@ func getLastTag(r *git.Repository) (*Tag, error) {
 		return nil, nil
 	}
 	return tags[0], nil
+}
+
+func nextVersion(curr semver.Version, msgs []string) (semver.Version, error) {
+	const (
+		Major int = iota
+		Minor
+		Patch
+		Nil
+	)
+	next := Nil
+
+	for _, msg := range msgs {
+		cmo := format.ParseCommitMsg(msg)
+		if cmo == nil {
+			continue // Ignore malformatted commits
+		}
+
+		if cmo.BreakingChanges {
+			next = Major
+			break
+		} else if cmo.Ctype == format.FeatureCommit {
+			next = Minor
+		} else if cmo.Ctype == format.FixCommit && next == Nil {
+			next = Patch
+		}
+	}
+
+	switch next {
+	case Major:
+		err := curr.IncrementMajor()
+		return curr, err
+	case Minor:
+		err := curr.IncrementMinor()
+		return curr, err
+	case Patch:
+		err := curr.IncrementPatch()
+		return curr, err
+	default:
+		return curr, nil
+	}
 }
