@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
 )
 
 func setUpRepo() (r *git.Repository, teardown func(), err error) {
@@ -67,4 +68,40 @@ func setUpRepo() (r *git.Repository, teardown func(), err error) {
 	}
 
 	return r, teardown, nil
+}
+
+func stageNewFile(r *git.Repository) error {
+	// Create and stage file
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	f, err := ioutil.TempFile(wd, "*")
+	if err != nil {
+		return err
+	}
+	wt, err := r.Worktree()
+	if err != nil {
+		return err
+	}
+	_, err = wt.Add(filepath.Base(f.Name()))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func lastTagFrom(r *git.Repository) (*plumbing.Reference, error) {
+	tags, err := r.Tags()
+	if err != nil {
+		return nil, err
+	}
+
+	var tag *plumbing.Reference
+	tags.ForEach(func(t *plumbing.Reference) error {
+		tag = t
+		return nil
+	})
+
+	return tag, nil
 }

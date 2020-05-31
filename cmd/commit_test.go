@@ -60,27 +60,6 @@ func TestNeedCommit(t *testing.T) {
 	assert.True(t, nc)
 }
 
-func stageNewFile(r *git.Repository) error {
-	// Create and stage file
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	f, err := ioutil.TempFile(wd, "*")
-	if err != nil {
-		return err
-	}
-	wt, err := r.Worktree()
-	if err != nil {
-		return err
-	}
-	_, err = wt.Add(filepath.Base(f.Name()))
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func TestCommit(t *testing.T) {
 	r, teardown, err := setUpRepo()
 	defer teardown()

@@ -22,10 +22,12 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"errors"
+	"fmt"
+	"io"
 	"sort"
 	"strings"
 
+	"github.com/b4nst/turbogit/internal/context"
 	"github.com/b4nst/turbogit/internal/format"
 	"github.com/blang/semver/v4"
 	"github.com/go-git/go-git/v5"
@@ -41,13 +43,63 @@ const (
 var tagCmd = &cobra.Command{
 	Use:   "tag",
 	Short: "Create a tag",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return errors.New("Not implemented")
-	},
+	RunE:  tag,
+}
+
+func tag(cmd *cobra.Command, args []string) error {
+	ctx, err := context.FromCommand(cmd)
+	if err != nil {
+		return err
+	}
+	// Get flags
+	dr, err := cmd.Flags().GetBool("dry-run")
+	if err != nil {
+		return err
+	}
+
+	curr, err := lastTag(ctx.Repo)
+	if err != nil {
+		return err
+	}
+	if curr == nil {
+		v, err := semver.Make("0.0.0")
+		if err != nil {
+			return err
+		}
+		curr = &Tag{version: v, ref: &plumbing.Reference{}}
+	}
+
+	cmsgs, err := commitMsgsSince(ctx.Repo, curr.ref.Hash())
+	if err != nil {
+		return err
+	}
+	next, err := nextVersion(curr.version, cmsgs)
+	if err != nil {
+		return err
+	}
+
+	tag := TAG_PREFIX + next.String()
+	if dr {
+		fmt.Printf("%s would be created", next)
+	} else {
+		head, err := ctx.Repo.Head()
+		if err != nil {
+			return err
+		}
+		ref, err := ctx.Repo.CreateTag(tag, head.Hash(), nil)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%s created", ref.Name())
+	}
+
+	return nil
 }
 
 func init() {
 	rootCmd.AddCommand(tagCmd)
+
+	tagCmd.Flags().BoolP("dry-run", "d", false, "Do not tag.")
 }
 
 type Tag struct {
@@ -77,10 +129,9 @@ func filterSemver(it storer.ReferenceIter) (Tags, error) {
 
 	filter := func(ref *plumbing.Reference) error {
 		v, err := semver.Make(strings.TrimLeft(ref.Name().Short(), TAG_PREFIX))
-		if err != nil {
-			return err
+		if err == nil {
+			tags = append(tags, &Tag{version: v, ref: ref})
 		}
-		tags = append(tags, &Tag{version: v, ref: ref})
 		return nil
 	}
 
@@ -91,7 +142,7 @@ func filterSemver(it storer.ReferenceIter) (Tags, error) {
 	return tags, nil
 }
 
-// Return the last Semver tag or nil if
+// Return the last Semver tag or nil if there are none
 func lastTag(r *git.Repository) (*Tag, error) {
 	iter, err := r.Tags()
 	if err != nil {
@@ -148,4 +199,22 @@ func nextVersion(curr semver.Version, msgs []string) (semver.Version, error) {
 	default:
 		return curr, nil
 	}
+}
+
+func commitMsgsSince(r *git.Repository, start plumbing.Hash) ([]string, error) {
+	citer, err := r.Log(&git.LogOptions{Order: git.LogOrderCommitterTime})
+	if err != nil {
+		return nil, err
+	}
+	defer citer.Close()
+
+	msgs := []string{}
+	for c, err := citer.Next(); err == nil && c.Hash != start; c, err = citer.Next() {
+		msgs = append(msgs, c.Message)
+	}
+	if err != nil && err != io.EOF {
+		return nil, err
+	}
+
+	return msgs, err
 }
