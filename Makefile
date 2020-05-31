@@ -22,3 +22,7 @@ build: bin/tug
 test: $(BUILD_FILES)
 	$(GOTEST) ./...  -coverprofile c.out
 .PHONY: test
+
+clean:
+	rm -rf bin dist c.out
+.PHONY: clean
