@@ -38,8 +38,11 @@ Usage:
 Available Commands:
   branch      Create a new branch.
   commit      Create a new commit.
+  completion  Generate completion script
   config      Read or write config.
   help        Help about any command
+  tag         Create a tag
+  version     Print current version.
 
 Flags:
       --config string   config file (default is $HOME/.config/tug/tug.toml)
