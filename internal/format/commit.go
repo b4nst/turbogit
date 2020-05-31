@@ -3,6 +3,7 @@ package format
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/b4nst/turbogit/internal/constants"
 )
@@ -125,4 +126,40 @@ func FindCommitType(str string) CommitType {
 	default:
 		return NilCommit
 	}
+}
+
+func ParseCommitMsg(msg string) *CommitMessageOption {
+	lines := strings.Split(msg, "\n")
+
+	// First line
+	re := regexp.MustCompile(`(?m)^(?P<type>\w+)(?:\((?P<scope>[^)]+)\))?(?P<bc>!)?: (?P<subject>.+)$`)
+	match := re.FindStringSubmatch(lines[0])
+	if len(match) <= 0 {
+		return nil
+	}
+	res := make(map[string]string)
+	for i, name := range re.SubexpNames() {
+		if i != 0 && name != "" {
+			res[name] = match[i]
+		}
+	}
+	cmo := &CommitMessageOption{
+		Ctype:           FindCommitType(res["type"]),
+		Description:     res["subject"],
+		Scope:           res["scope"],
+		BreakingChanges: res["bc"] == "!",
+	}
+
+	// Body and footers
+	re = regexp.MustCompile(`(?m)^\w+(?: #|: )`)
+	for _, l := range lines[1:] {
+		if re.MatchString(l) {
+			cmo.Footers = append(cmo.Footers, l)
+		} else {
+			cmo.Body += l
+		}
+	}
+	cmo.Body = strings.Trim(cmo.Body, "\n")
+
+	return cmo
 }

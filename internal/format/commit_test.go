@@ -92,3 +92,28 @@ func TestFindCommitType(t *testing.T) {
 		})
 	}
 }
+
+func TestParseCommitMsg(t *testing.T) {
+	tcs := map[string]struct {
+		str      string
+		expected *CommitMessageOption
+	}{
+		"Bad": {"i'm bad", nil},
+		"Simple": {"feat: message description",
+			&CommitMessageOption{Ctype: FeatureCommit, Description: "message description"}},
+		"Scoped": {"fix(scope): message description",
+			&CommitMessageOption{Ctype: FixCommit, Description: "message description", Scope: "scope"}},
+		"Breaking change": {"feat!: message description",
+			&CommitMessageOption{Ctype: FeatureCommit, Description: "message description", BreakingChanges: true}},
+		"With body": {"feat: message description\n\nCommit body\n",
+			&CommitMessageOption{Ctype: FeatureCommit, Description: "message description", Body: "Commit body"}},
+		"With footers": {"feat: message description\n\nCommit body\n\nFooter: 1\nFooter #2",
+			&CommitMessageOption{Ctype: FeatureCommit, Description: "message description", Body: "Commit body", Footers: []string{"Footer: 1", "Footer #2"}}},
+	}
+
+	for name, tc := range tcs {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, ParseCommitMsg(tc.str))
+		})
+	}
+}
