@@ -9,7 +9,7 @@
 - Multi platform
 
 [GitHub](https://github.com/b4nst/turbogit/)
-[Get Started](#tug)
+[Get Started](#turbogit-tug)
 
 <!-- background color -->
 
