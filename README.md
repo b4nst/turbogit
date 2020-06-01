@@ -16,6 +16,8 @@ tug is a cli tool built to help you deal with your day-to-day git work. tug enfo
 - [Usage](#usage)
 - [Installation](#installation)
   - [macOS](#macos)
+    - [Macports (preferred)](#macports-preferred)
+    - [Homebrew](#homebrew)
   - [Linux](#linux)
     - [Debian/Ubuntu](#debianubuntu)
     - [Fedora](#fedora)
@@ -52,8 +54,20 @@ Flags:
 ## Installation
 
 ### macOS
-`turbogit` is available via Homebrew.
+`turbogit` is available on [MacPorts](https://www.macports.org/install.php) and Homebrew.
 
+#### Macports (preferred)
+install
+```shell
+sudo port install turbogit
+```
+
+upgrade
+```shell
+sudo port selfupdate && sudo port upgrade turbogit
+```
+
+#### Homebrew
 install
 ```shell
 brew tap b4nst/homebrew-tap
