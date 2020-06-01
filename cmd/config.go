@@ -32,24 +32,33 @@ import (
 	"github.com/spf13/viper"
 )
 
+func init() {
+	rootCmd.AddCommand(configCmd)
+
+	configCmd.Flags().BoolP("delete", "d", false, "Delete config")
+}
+
 // configCmd represents the config command
 var configCmd = &cobra.Command{
-	Use:           "config [key] [value]",
-	Short:         "Read or write config.",
-	Long:          `If value is not provided display the current value for this key.`,
-	Args:          cobra.RangeArgs(1, 2),
-	SilenceUsage:  true,
-	SilenceErrors: true,
+	Use:                   "config [key] [value]",
+	Short:                 "Read or write config",
+	Long:                  "If [value] is provided, sets [key] to [value] in config, otherwise print current value for [key]",
+	DisableFlagsInUseLine: true,
+	Example: `
+# Set config user.name to alice. If the config does not exist, it will be created.
+$ tug config user.name alice
+
+# Get the current value for user.name
+$ tug config user.name
+
+# Delete the entrie user.name
+$ tug config -d user.name
+`,
+	Args: cobra.RangeArgs(1, 2),
 	PreRun: func(cmd *cobra.Command, args []string) {
 		context.FromCommand(cmd)
 	},
 	RunE: configure,
-}
-
-func init() {
-	rootCmd.AddCommand(configCmd)
-
-	configCmd.Flags().BoolP("delete", "d", false, "Delete config.")
 }
 
 func configure(cmd *cobra.Command, args []string) error {

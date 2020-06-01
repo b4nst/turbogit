@@ -27,12 +27,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var validCompletionArgs = []string{"bash", "zsh", "fish", "powershell"}
+
+func init() {
+	rootCmd.AddCommand(completionCmd)
+}
+
 // completionCmd represents the completion command
 var completionCmd = &cobra.Command{
-	Use:   "completion [bash|zsh|fish|powershell]",
-	Short: "Generate completion script",
-	Long: `To load completions:
-
+	Use:                   fmt.Sprintf("completion %s", validCompletionArgs),
+	Short:                 "Generate completion script",
+	DisableFlagsInUseLine: true,
+	Example: `
 Bash:
 
 $ source <(tug completion bash)
@@ -57,14 +63,9 @@ $ tug completion fish | source
 # To load completions for each session, execute once:
 $ tug completion fish > ~/.config/fish/completions/tug.fish
 `,
-	DisableFlagsInUseLine: true,
-	ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
-	Args:                  cobra.ExactValidArgs(1),
-	RunE:                  completion,
-}
-
-func init() {
-	rootCmd.AddCommand(completionCmd)
+	ValidArgs: validCompletionArgs,
+	Args:      cobra.ExactValidArgs(1),
+	RunE:      completion,
 }
 
 func completion(cmd *cobra.Command, args []string) error {

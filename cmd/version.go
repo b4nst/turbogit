@@ -30,10 +30,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func init() {
+	rootCmd.AddCommand(versionCmd)
+}
+
 // versionCmd represents the version command
 var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Print current version.",
+	Use:                   "version",
+	Short:                 "Print current version",
+	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, '\t', tabwriter.AlignRight)
 		defer w.Flush()
@@ -44,8 +49,4 @@ var versionCmd = &cobra.Command{
 		fmt.Fprintf(w, "\n%s\t%s\t", "Built:", BuildDate)
 		fmt.Fprintf(w, "\n%s\t%s/%s\t", "OS/Arch:", runtime.GOOS, runtime.GOARCH)
 	},
-}
-
-func init() {
-	rootCmd.AddCommand(versionCmd)
 }

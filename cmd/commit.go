@@ -36,11 +36,11 @@ import (
 func init() {
 	rootCmd.AddCommand(commitCmd)
 
-	commitCmd.Flags().StringP("type", "t", "", fmt.Sprintf("Commit types %s.", format.AllCommitType()))
+	commitCmd.Flags().StringP("type", "t", "", fmt.Sprintf("Commit types %s", format.AllCommitType()))
 	commitCmd.RegisterFlagCompletionFunc("type", typeFlagCompletion)
 	commitCmd.Flags().BoolP("breaking-changes", "c", false, "Commit contains breaking changes")
-	commitCmd.Flags().BoolP("edit", "e", false, "Prompt editor to edit your message (add body or/and footer(s)).")
-	commitCmd.Flags().StringP("scope", "s", "", "Commit scope.")
+	commitCmd.Flags().BoolP("edit", "e", false, "Prompt editor to edit your message (add body or/and footer(s))")
+	commitCmd.Flags().StringP("scope", "s", "", "Add a scope")
 }
 
 func typeFlagCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -49,8 +49,22 @@ func typeFlagCompletion(cmd *cobra.Command, args []string, toComplete string) ([
 
 // commitCmd represents the commit command
 var commitCmd = &cobra.Command{
-	Use:       "commit [[type] subject]",
-	Short:     "Create a new commit.",
+	Use:                   "commit [type] [subject]",
+	Short:                 "Commit staging area",
+	DisableFlagsInUseLine: true,
+	Example: `
+# Commit a new feature (feat: a new feature)
+$ tug commit feat a new feature
+
+# Commit a fix that brings breaking changes (fix!: API break)
+$ tug commit fix -c API break
+
+# Add a scope to the commit (refactor(scope): a scopped refactor)
+$ tug commit refactor a scopped refactor -s scope
+
+# Open your editor to edit the commit message
+$ tug commit ci -e message
+	`,
 	Args:      cobra.MinimumNArgs(1),
 	RunE:      commit,
 	ValidArgs: format.AllCommitType(),

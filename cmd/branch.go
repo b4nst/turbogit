@@ -40,8 +40,16 @@ func init() {
 }
 
 var branchCmd = &cobra.Command{
-	Use:       fmt.Sprintf("branch [%s] [description]", strings.Join(format.AllBranchType(), "|")),
-	Short:     "Create a new branch.",
+	Use:                   fmt.Sprintf("branch %s [description]", format.AllBranchType()),
+	Short:                 "Create a new branch",
+	DisableFlagsInUseLine: true,
+	Example: `
+# Create branch feat/my-feature from current branch
+$ tug branch feat my feature
+
+# Create branch user/alice/my-branch, given that alice is the current tug/git user
+$ tug branch user my branch
+	`,
 	Args:      cobra.MinimumNArgs(1),
 	ValidArgs: format.AllBranchType(),
 	RunE:      branch,

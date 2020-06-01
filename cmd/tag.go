@@ -40,10 +40,24 @@ const (
 	TAG_PREFIX = "v"
 )
 
+func init() {
+	rootCmd.AddCommand(tagCmd)
+
+	tagCmd.Flags().BoolP("dry-run", "d", false, "Do not tag.")
+}
+
 var tagCmd = &cobra.Command{
-	Use:   "tag",
-	Short: "Create a tag",
-	RunE:  tag,
+	Use:                   "tag",
+	Short:                 "Create a tag",
+	DisableFlagsInUseLine: true,
+	Aliases:               []string{"release"},
+	Long:                  "Create a semver tag, based on the commit history since last one",
+	Example: `
+# Given that the last release tag was v1.0.0, some feature were committed but no breaking changes.
+# The following command will create the tag v1.1.0
+$ tug tag	
+`,
+	RunE: tag,
 }
 
 func tag(cmd *cobra.Command, args []string) error {
@@ -94,12 +108,6 @@ func tag(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
-}
-
-func init() {
-	rootCmd.AddCommand(tagCmd)
-
-	tagCmd.Flags().BoolP("dry-run", "d", false, "Do not tag.")
 }
 
 type Tag struct {
