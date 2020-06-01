@@ -34,7 +34,7 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(commitCmd)
+	RootCmd.AddCommand(commitCmd)
 
 	commitCmd.Flags().StringP("type", "t", "", fmt.Sprintf("Commit types %s", format.AllCommitType()))
 	commitCmd.RegisterFlagCompletionFunc("type", typeFlagCompletion)

@@ -30,7 +30,7 @@ import (
 var validCompletionArgs = []string{"bash", "zsh", "fish", "powershell"}
 
 func init() {
-	rootCmd.AddCommand(completionCmd)
+	RootCmd.AddCommand(completionCmd)
 }
 
 // completionCmd represents the completion command

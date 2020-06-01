@@ -41,7 +41,7 @@ const (
 )
 
 func init() {
-	rootCmd.AddCommand(tagCmd)
+	RootCmd.AddCommand(tagCmd)
 
 	tagCmd.Flags().BoolP("dry-run", "d", false, "Do not tag.")
 }

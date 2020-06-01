@@ -2,6 +2,7 @@
 GOCMD=go
 GOBUILD=$(GOCMD) build
 GOTEST=$(GOCMD) test
+GORUN=$(GOCMD) run
 
 BUILD_FILES = $(shell go list -f '{{range .GoFiles}}{{$$.Dir}}/{{.}} {{end}}' ./...)
 
@@ -22,6 +23,10 @@ build: bin/tug
 test: $(BUILD_FILES)
 	$(GOTEST) ./...  -coverprofile c.out
 .PHONY: test
+
+doc:
+	$(GORUN) scripts/gen-doc.go
+.PHONY: doc
 
 clean:
 	rm -rf bin dist c.out

@@ -31,7 +31,7 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(versionCmd)
+	RootCmd.AddCommand(versionCmd)
 }
 
 // versionCmd represents the version command

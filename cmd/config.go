@@ -33,7 +33,7 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(configCmd)
+	RootCmd.AddCommand(configCmd)
 
 	configCmd.Flags().BoolP("delete", "d", false, "Delete config")
 }

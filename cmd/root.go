@@ -44,13 +44,13 @@ var (
 
 var cfgFile string
 
-var rootCmd = &cobra.Command{
+var RootCmd = &cobra.Command{
 	Use:   BIN_NAME,
 	Short: "Improve your git workflow.",
 }
 
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
+	if err := RootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
@@ -59,7 +59,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf("config file (default is $HOME/.config/%s/%s.toml)", BIN_NAME, BIN_NAME))
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf("config file (default is $HOME/.config/%s/%s.toml)", BIN_NAME, BIN_NAME))
 }
 
 // initConfig reads in config file and ENV variables if set.

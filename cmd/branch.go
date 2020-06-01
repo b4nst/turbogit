@@ -36,7 +36,7 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(branchCmd)
+	RootCmd.AddCommand(branchCmd)
 }
 
 var branchCmd = &cobra.Command{
