@@ -140,13 +140,18 @@ func needCommit(ctx *context.Context) (bool, error) {
 		return false, err
 	}
 
+	unstaged := false
 	for _, s := range status {
 		if s.Staging != git.Unmodified && s.Staging != git.Untracked {
 			return true, nil
 		}
 		if s.Worktree != git.Unmodified {
-			return false, errors.New("no changes added to commit")
+			unstaged = true
 		}
+	}
+
+	if unstaged {
+		return false, errors.New("no changes added to commit")
 	}
 	return false, nil
 }
