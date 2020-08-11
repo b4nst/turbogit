@@ -3,7 +3,7 @@ module github.com/b4nst/turbogit
 go 1.14
 
 require (
-	github.com/AlecAivazis/survey/v2 v2.0.8
+	github.com/AlecAivazis/survey/v2 v2.1.1
 	github.com/blang/semver/v4 v4.0.0
 	github.com/go-git/go-git/v5 v5.1.0
 	github.com/mitchellh/go-homedir v1.1.0
