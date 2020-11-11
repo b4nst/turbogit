@@ -3,6 +3,7 @@ package cmd
 import (
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
 
@@ -133,4 +134,41 @@ func TestCommit(t *testing.T) {
 	*fBreak = false
 	*fScope = ""
 	assert.EqualError(t, commit(cmd, []string{"fix", "not", "committed"}), "no changes added to commit")
+}
+
+func TestPreCommit(t *testing.T) {
+	_, teardown, err := setUpRepo()
+	defer teardown()
+	require.NoError(t, err)
+
+	cmd := &cobra.Command{}
+	ctx, err := context.FromCommand(cmd)
+	require.NoError(t, err)
+
+	// Test error with directory script instead of file
+	err = os.MkdirAll(path.Join(".git", "hooks", "pre-commit"), 0700)
+	require.NoError(t, err)
+	err = preCommit(ctx)
+	assert.EqualError(t, err, "Pre-commit hook (.git/hooks/pre-commit) is a directory, it should be an executable file.")
+	os.Remove(path.Join(".git", "hooks", "pre-commit"))
+
+	// Test error script
+	writeGitHook(t, "pre-commit", "#!/bin/sh\n>&2 echo standard error\nexit 3")
+	stderr, resetSterr := captureStd(t, os.Stderr)
+	defer resetSterr()
+	err = preCommit(ctx)
+	assert.EqualError(t, err, "exit status 3")
+	stde, err := ioutil.ReadFile(stderr.Name())
+	require.NoError(t, err)
+	assert.Equal(t, "standard error\n", string(stde))
+
+	// Test successful script
+	writeGitHook(t, "pre-commit", "#!/bin/sh\necho Hello world!\nexit 0")
+	stdout, resetStdout := captureStd(t, os.Stdout)
+	defer resetStdout()
+	err = preCommit(ctx)
+	assert.NoError(t, err)
+	stdo, err := ioutil.ReadFile(stdout.Name())
+	require.NoError(t, err)
+	assert.Equal(t, "Hello world!\n", string(stdo))
 }
