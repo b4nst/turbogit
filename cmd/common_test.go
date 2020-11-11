@@ -3,11 +3,15 @@ package cmd
 import (
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
+	"syscall"
+	"testing"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/stretchr/testify/require"
 )
 
 func setUpRepo() (r *git.Repository, teardown func(), err error) {
@@ -104,4 +108,25 @@ func lastTagFrom(r *git.Repository) (*plumbing.Reference, error) {
 	})
 
 	return tag, nil
+}
+
+func captureStd(t *testing.T, std *os.File) (f *os.File, reset func()) {
+	f, err := ioutil.TempFile("", path.Base(std.Name()))
+	require.NoError(t, err)
+
+	reset = func() {
+		*std = *(os.NewFile(uintptr(syscall.Stdout), std.Name()))
+	}
+	*std = *f
+	return
+}
+
+func writeGitHook(t *testing.T, hook string, content string) {
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	hooks := path.Join(wd, ".git", "hooks")
+	err = os.MkdirAll(hooks, 0700)
+	require.NoError(t, err)
+	err = ioutil.WriteFile(path.Join(hooks, hook), []byte(content), 0777)
+	require.NoError(t, err)
 }

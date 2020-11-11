@@ -24,6 +24,9 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"os"
+	"os/exec"
+	"path"
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -108,6 +111,11 @@ func commit(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
+	err = preCommit(ctx)
+	if err != nil {
+		return fmt.Errorf("Error during pre-commit hook: %s", err.Error())
+	}
+
 	// Parse commit type
 	ctype := format.FindCommitType(typeFlag)
 	if ctype == format.NilCommit {
@@ -179,4 +187,32 @@ func promptEditor(msg string) string {
 	}
 	survey.AskOne(prompt, &msg)
 	return msg
+}
+
+func preCommit(ctx *context.Context) error {
+	wt, err := ctx.Repo.Worktree()
+	if err != nil {
+		return err
+	}
+
+	script := path.Join(wt.Filesystem.Root(), ".git", "hooks", "pre-commit")
+	info, err := os.Stat(script)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	if info.IsDir() {
+		return fmt.Errorf("Pre-commit hook (.git/hooks/pre-commit) is a directory, it should be an executable file.")
+	}
+
+	cmd := &exec.Cmd{
+		Dir:    wt.Filesystem.Root(),
+		Path:   script,
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+	}
+
+	return cmd.Run()
 }
