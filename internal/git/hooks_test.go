@@ -160,7 +160,7 @@ exit 0
 	assert.NoError(t, err)
 	stdo, err := ioutil.ReadFile(stdout.Name())
 	require.NoError(t, err)
-	assert.Equal(t, "Hello world!\n", string(stdo))
+	assert.Equal(t, "Running pre-commit hook...\nHello world!\n", string(stdo))
 }
 
 func TestPrepareCommitMsg(t *testing.T) {
@@ -223,5 +223,5 @@ exit 0
 	assert.NoError(t, err)
 	stdo, err := ioutil.ReadFile(stdout.Name())
 	require.NoError(t, err)
-	assert.Equal(t, "Hello world!\n", string(stdo))
+	assert.Equal(t, "Running post-commit hook...\nHello world!\n", string(stdo))
 }
