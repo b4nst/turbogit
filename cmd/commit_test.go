@@ -1,14 +1,13 @@
 package cmd
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"testing"
 
 	"github.com/b4nst/turbogit/internal/context"
+	"github.com/b4nst/turbogit/internal/test"
 	"github.com/go-git/go-git/v5"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
@@ -16,7 +15,7 @@ import (
 )
 
 func TestWriteCommit(t *testing.T) {
-	r, teardown, err := setUpRepo()
+	r, teardown, err := test.SetUpRepo()
 	defer teardown()
 	require.NoError(t, err)
 
@@ -34,7 +33,7 @@ func TestWriteCommit(t *testing.T) {
 }
 
 func TestNeedCommit(t *testing.T) {
-	r, teardown, err := setUpRepo()
+	r, teardown, err := test.SetUpRepo()
 	defer teardown()
 	require.NoError(t, err)
 
@@ -63,7 +62,7 @@ func TestNeedCommit(t *testing.T) {
 }
 
 func TestCommit(t *testing.T) {
-	r, teardown, err := setUpRepo()
+	r, teardown, err := test.SetUpRepo()
 	defer teardown()
 	require.NoError(t, err)
 
@@ -97,27 +96,27 @@ func TestCommit(t *testing.T) {
 	*fType = ""
 	*fBreak = false
 	*fScope = ""
-	require.NoError(t, stageNewFile(r))
+	require.NoError(t, test.StageNewFile(r))
 	assert.Error(t, commit(cmd, []string{"not-type"}))
 	// Feat
 	*fType = "feat"
 	*fBreak = false
 	*fScope = ""
-	require.NoError(t, stageNewFile(r))
+	require.NoError(t, test.StageNewFile(r))
 	assert.NoError(t, commit(cmd, []string{"my", "message"}))
 	assertLastCommit("feat: my message")
 	// Breaking change
 	*fType = ""
 	*fBreak = true
 	*fScope = ""
-	require.NoError(t, stageNewFile(r))
+	require.NoError(t, test.StageNewFile(r))
 	assert.NoError(t, commit(cmd, []string{"fix", "my", "message"}))
 	assertLastCommit("fix!: my message")
 	// Scope
 	*fType = ""
 	*fBreak = false
 	*fScope = "scope"
-	require.NoError(t, stageNewFile(r))
+	require.NoError(t, test.StageNewFile(r))
 	assert.NoError(t, commit(cmd, []string{"test", "my", "message"}))
 	assertLastCommit("test(scope): my message")
 	// Workdir clean
@@ -135,162 +134,4 @@ func TestCommit(t *testing.T) {
 	*fBreak = false
 	*fScope = ""
 	assert.EqualError(t, commit(cmd, []string{"fix", "not", "committed"}), "no changes added to commit")
-}
-
-func TestPreCommit(t *testing.T) {
-	_, teardown, err := setUpRepo()
-	defer teardown()
-	require.NoError(t, err)
-
-	cmd := &cobra.Command{}
-	ctx, err := context.FromCommand(cmd)
-	require.NoError(t, err)
-
-	// Test error with directory script instead of file
-	err = os.MkdirAll(path.Join(".git", "hooks", "pre-commit"), 0700)
-	require.NoError(t, err)
-	err = preCommit(ctx)
-	assert.EqualError(t, err, "Pre-commit hook (.git/hooks/pre-commit) is a directory, it should be an executable file.")
-	os.Remove(path.Join(".git", "hooks", "pre-commit"))
-
-	// Test error script
-	writeGitHook(t, "pre-commit", "#!/bin/sh\n>&2 echo standard error\nexit 3")
-	stderr, resetSterr := captureStd(t, os.Stderr)
-	defer resetSterr()
-	err = preCommit(ctx)
-	assert.EqualError(t, err, "exit status 3")
-	stde, err := ioutil.ReadFile(stderr.Name())
-	require.NoError(t, err)
-	assert.Equal(t, "standard error\n", string(stde))
-
-	// Test successful script
-	writeGitHook(t, "pre-commit", "#!/bin/sh\necho Hello world!\nexit 0")
-	stdout, resetStdout := captureStd(t, os.Stdout)
-	defer resetStdout()
-	err = preCommit(ctx)
-	assert.NoError(t, err)
-	stdo, err := ioutil.ReadFile(stdout.Name())
-	require.NoError(t, err)
-	assert.Equal(t, "Hello world!\n", string(stdo))
-}
-
-func TestPrepareCommitMsg(t *testing.T) {
-	_, teardown, err := setUpRepo()
-	defer teardown()
-	require.NoError(t, err)
-
-	cmd := &cobra.Command{}
-	ctx, err := context.FromCommand(cmd)
-	require.NoError(t, err)
-
-	// Test error with directory script instead of file
-	err = os.MkdirAll(path.Join(".git", "hooks", "prepare-commit-msg"), 0700)
-	require.NoError(t, err)
-	msg, err := prepareCommitMsg(ctx)
-	assert.EqualError(t, err, "Pre-commit hook (.git/hooks/prepare-commit-msg) is a directory, it should be an executable file.")
-	assert.Equal(t, "", msg)
-	os.Remove(path.Join(".git", "hooks", "prepare-commit-msg"))
-
-	// Test error script
-	writeGitHook(t, "prepare-commit-msg", "#!/bin/sh\n>&2 echo standard error\nexit 3")
-	stderr, resetSterr := captureStd(t, os.Stderr)
-	defer resetSterr()
-	msg, err = prepareCommitMsg(ctx)
-	assert.EqualError(t, err, "exit status 3")
-	assert.Equal(t, "", msg)
-	stde, err := ioutil.ReadFile(stderr.Name())
-	require.NoError(t, err)
-	assert.Equal(t, "standard error\n", string(stde))
-
-	// Test successful script
-	writeGitHook(t, "prepare-commit-msg", "#!/bin/sh\necho \"Hello world!\" > \"$1\"\nexit 0")
-	msg, err = prepareCommitMsg(ctx)
-	assert.NoError(t, err)
-	assert.Equal(t, "Hello world!\n", msg)
-}
-
-func TestCommitMsg(t *testing.T) {
-	_, teardown, err := setUpRepo()
-	defer teardown()
-	require.NoError(t, err)
-
-	cmd := &cobra.Command{}
-	ctx, err := context.FromCommand(cmd)
-	require.NoError(t, err)
-
-	// Test when no hooks exists
-	msg, err := commitMsg(ctx, "hello world")
-	assert.NoError(t, err)
-	assert.Equal(t, "hello world", msg)
-
-	// Test error with directory script instead of file
-	err = os.MkdirAll(path.Join(".git", "hooks", "commit-msg"), 0700)
-	require.NoError(t, err)
-	msg, err = commitMsg(ctx, "hello world")
-	assert.EqualError(t, err, "Pre-commit hook (.git/hooks/commit-msg) is a directory, it should be an executable file.")
-	assert.Equal(t, "", msg)
-	os.Remove(path.Join(".git", "hooks", "commit-msg"))
-
-	// Test error script
-	script := `#!/bin/sh
->&2 echo standard error
-exit 3
-`
-	fmt.Println(script)
-	writeGitHook(t, "commit-msg", script)
-	stderr, resetSterr := captureStd(t, os.Stderr)
-	defer resetSterr()
-	msg, err = commitMsg(ctx, "hello world")
-	assert.EqualError(t, err, "exit status 3")
-	assert.Equal(t, "", msg)
-	stde, err := ioutil.ReadFile(stderr.Name())
-	require.NoError(t, err)
-	assert.Equal(t, "standard error\n", string(stde))
-
-	// Test successful script
-	script = `#!/bin/sh
-echo world! >> "$1"
-exit 0
-`
-	writeGitHook(t, "commit-msg", script)
-	msg, err = commitMsg(ctx, "Hello ")
-	assert.NoError(t, err)
-	assert.Equal(t, "Hello world!\n", msg)
-}
-
-func TestPostCommit(t *testing.T) {
-	_, teardown, err := setUpRepo()
-	defer teardown()
-	require.NoError(t, err)
-
-	cmd := &cobra.Command{}
-	ctx, err := context.FromCommand(cmd)
-	require.NoError(t, err)
-
-	// Test error with directory script instead of file
-	err = os.MkdirAll(path.Join(".git", "hooks", "post-commit"), 0700)
-	require.NoError(t, err)
-	err = postCommit(ctx)
-	assert.EqualError(t, err, "Post-commit hook (.git/hooks/post-commit) is a directory, it should be an executable file.")
-	os.Remove(path.Join(".git", "hooks", "post-commit"))
-
-	// Test error script
-	writeGitHook(t, "post-commit", "#!/bin/sh\n>&2 echo standard error\nexit 3")
-	stderr, resetSterr := captureStd(t, os.Stderr)
-	defer resetSterr()
-	err = postCommit(ctx)
-	assert.EqualError(t, err, "exit status 3")
-	stde, err := ioutil.ReadFile(stderr.Name())
-	require.NoError(t, err)
-	assert.Equal(t, "standard error\n", string(stde))
-
-	// Test successful script
-	writeGitHook(t, "post-commit", "#!/bin/sh\necho Hello world!\nexit 0")
-	stdout, resetStdout := captureStd(t, os.Stdout)
-	defer resetStdout()
-	err = postCommit(ctx)
-	assert.NoError(t, err)
-	stdo, err := ioutil.ReadFile(stdout.Name())
-	require.NoError(t, err)
-	assert.Equal(t, "Hello world!\n", string(stdo))
 }

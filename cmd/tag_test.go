@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/b4nst/turbogit/internal/test"
 	"github.com/blang/semver/v4"
 	"github.com/go-git/go-git/v5"
 	"github.com/spf13/cobra"
@@ -13,7 +14,7 @@ import (
 )
 
 func TestGetLastTag(t *testing.T) {
-	r, teardown, err := setUpRepo()
+	r, teardown, err := test.SetUpRepo()
 	defer teardown()
 	require.NoError(t, err)
 
@@ -67,24 +68,24 @@ func TestNextVersion(t *testing.T) {
 }
 
 func TestCommitMsgsSince(t *testing.T) {
-	r, teardown, err := setUpRepo()
+	r, teardown, err := test.SetUpRepo()
 	defer teardown()
 	require.NoError(t, err)
 	wt, err := r.Worktree()
 	require.NoError(t, err)
 
-	stageNewFile(r)
+	test.StageNewFile(r)
 	h, err := wt.Commit("tag commit", &git.CommitOptions{})
 	require.NoError(t, err)
 	ref, err := r.CreateTag("tag", h, nil)
 
-	stageNewFile(r)
+	test.StageNewFile(r)
 	_, err = wt.Commit("msg 1", &git.CommitOptions{})
 	require.NoError(t, err)
-	stageNewFile(r)
+	test.StageNewFile(r)
 	_, err = wt.Commit("msg 2", &git.CommitOptions{})
 	require.NoError(t, err)
-	stageNewFile(r)
+	test.StageNewFile(r)
 	_, err = wt.Commit("msg 3", &git.CommitOptions{})
 	require.NoError(t, err)
 
@@ -94,7 +95,7 @@ func TestCommitMsgsSince(t *testing.T) {
 }
 
 func TestTag(t *testing.T) {
-	r, teardown, err := setUpRepo()
+	r, teardown, err := test.SetUpRepo()
 	defer teardown()
 	require.NoError(t, err)
 	wt, err := r.Worktree()
@@ -113,28 +114,28 @@ func TestTag(t *testing.T) {
 	cmd := &cobra.Command{}
 	dr := cmd.Flags().BoolP("dry-run", "d", false, "Do not tag.")
 
-	stageNewFile(r)
+	test.StageNewFile(r)
 	h, err := wt.Commit("feat: first feat", &git.CommitOptions{})
 	require.NoError(t, err)
 	*dr = true
 	assert.NoError(t, tag(cmd, []string{}))
-	lt, err := lastTagFrom(r)
+	lt, err := test.LastTagFrom(r)
 	require.NoError(t, err)
 	assert.Nil(t, lt)
 
 	_, err = r.CreateTag("tag", h, nil) // In case of not semver tag
 	*dr = false
 	assert.NoError(t, tag(cmd, []string{}))
-	lt, err = lastTagFrom(r)
+	lt, err = test.LastTagFrom(r)
 	require.NoError(t, err)
 	assert.Equal(t, "v0.1.0", lt.Name().Short())
 
-	stageNewFile(r)
+	test.StageNewFile(r)
 	_, err = wt.Commit("fix!: breaking changes", &git.CommitOptions{})
 	require.NoError(t, err)
 	*dr = false
 	assert.NoError(t, tag(cmd, []string{}))
-	lt, err = lastTagFrom(r)
+	lt, err = test.LastTagFrom(r)
 	require.NoError(t, err)
 	assert.Equal(t, "v1.0.0", lt.Name().Short())
 }

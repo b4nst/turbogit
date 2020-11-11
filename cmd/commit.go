@@ -24,15 +24,12 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"os/exec"
-	"path"
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/b4nst/turbogit/internal/context"
 	"github.com/b4nst/turbogit/internal/format"
+	intgit "github.com/b4nst/turbogit/internal/git"
 	"github.com/go-git/go-git/v5"
 	"github.com/spf13/cobra"
 )
@@ -112,12 +109,12 @@ func commit(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	err = preCommit(ctx)
+	err = intgit.PreCommitHook(ctx)
 	if err != nil {
 		return fmt.Errorf("Error during pre-commit hook: %s", err.Error())
 	}
 
-	msg, err := prepareCommitMsg(ctx)
+	msg, err := intgit.PrepareCommitMsgHook(ctx)
 	if err != nil {
 		return fmt.Errorf("Error during prepare-commit-msg hook: %s", err.Error())
 	}
@@ -140,7 +137,7 @@ func commit(cmd *cobra.Command, args []string) error {
 	if edit {
 		cmsg = promptEditor(cmsg)
 	}
-	cmsg, err = commitMsg(ctx, cmsg)
+	cmsg, err = intgit.CommitMsgHook(ctx, cmsg)
 	if err != nil {
 		return fmt.Errorf("Error during commit-msg hook: %s", err.Error())
 	}
@@ -150,7 +147,7 @@ func commit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	err = postCommit(ctx)
+	err = intgit.PostCommitHook(ctx)
 	if err != nil {
 		fmt.Println("Warning, post-commit hook failed:", err.Error())
 	}
@@ -207,161 +204,4 @@ func promptEditor(msg string) string {
 	}
 	survey.AskOne(prompt, &msg)
 	return msg
-}
-
-// Hooks
-
-func preCommit(ctx *context.Context) error {
-	wt, err := ctx.Repo.Worktree()
-	if err != nil {
-		return err
-	}
-
-	script := path.Join(wt.Filesystem.Root(), ".git", "hooks", "pre-commit")
-	info, err := os.Stat(script)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
-	}
-	if info.IsDir() {
-		return fmt.Errorf("Pre-commit hook (.git/hooks/pre-commit) is a directory, it should be an executable file.")
-	}
-
-	cmd := &exec.Cmd{
-		Dir:    wt.Filesystem.Root(),
-		Path:   script,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-	}
-
-	return cmd.Run()
-}
-
-func prepareCommitMsg(ctx *context.Context) (msg string, err error) {
-	wt, err := ctx.Repo.Worktree()
-	if err != nil {
-		return
-	}
-
-	script := path.Join(wt.Filesystem.Root(), ".git", "hooks", "prepare-commit-msg")
-	info, err := os.Stat(script)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return "", nil
-		}
-		return
-	}
-	if info.IsDir() {
-		err = fmt.Errorf("Pre-commit hook (.git/hooks/prepare-commit-msg) is a directory, it should be an executable file.")
-		return
-	}
-
-	file, err := ioutil.TempFile("", "prepare-commit-msg-")
-	if err != nil {
-		return
-	}
-	defer file.Close()
-
-	cmd := &exec.Cmd{
-		Dir:    wt.Filesystem.Root(),
-		Path:   script,
-		Args:   []string{script, file.Name()},
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-	}
-	err = cmd.Run()
-	if err != nil {
-		return
-	}
-
-	content, err := ioutil.ReadAll(file)
-	if err != nil {
-		return
-	}
-	msg = string(content)
-	return
-}
-
-func commitMsg(ctx *context.Context, msgIn string) (msg string, err error) {
-	wt, err := ctx.Repo.Worktree()
-	if err != nil {
-		return
-	}
-
-	script := path.Join(wt.Filesystem.Root(), ".git", "hooks", "commit-msg")
-	info, err := os.Stat(script)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return msgIn, nil
-		}
-		return
-	}
-	if info.IsDir() {
-		err = fmt.Errorf("Pre-commit hook (.git/hooks/commit-msg) is a directory, it should be an executable file.")
-		return
-	}
-
-	file, err := ioutil.TempFile("", "commit-msg-")
-	if err != nil {
-		return
-	}
-	_, err = file.Write([]byte(msgIn))
-	if err != nil {
-		return
-	}
-	file.Close()
-
-	cmd := &exec.Cmd{
-		Dir:    wt.Filesystem.Root(),
-		Path:   script,
-		Args:   []string{script, file.Name()},
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-	}
-	err = cmd.Run()
-	if err != nil {
-		return
-	}
-
-	file, err = os.Open(file.Name())
-	defer file.Close()
-	if err != nil {
-		return
-	}
-	content, err := ioutil.ReadAll(file)
-	if err != nil {
-		return
-	}
-	msg = string(content)
-	return
-}
-
-func postCommit(ctx *context.Context) error {
-	wt, err := ctx.Repo.Worktree()
-	if err != nil {
-		return err
-	}
-
-	script := path.Join(wt.Filesystem.Root(), ".git", "hooks", "post-commit")
-	info, err := os.Stat(script)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
-	}
-	if info.IsDir() {
-		return fmt.Errorf("Post-commit hook (.git/hooks/post-commit) is a directory, it should be an executable file.")
-	}
-
-	cmd := &exec.Cmd{
-		Dir:    wt.Filesystem.Root(),
-		Path:   script,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-	}
-
-	return cmd.Run()
 }

@@ -3,6 +3,7 @@ package cmd
 import (
 	"testing"
 
+	"github.com/b4nst/turbogit/internal/test"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
@@ -10,7 +11,7 @@ import (
 )
 
 func TestBranchCreate(t *testing.T) {
-	r, teardown, err := setUpRepo()
+	r, teardown, err := test.SetUpRepo()
 	defer teardown()
 	require.NoError(t, err)
 

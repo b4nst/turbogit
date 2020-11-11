@@ -1,4 +1,4 @@
-package cmd
+package test
 
 import (
 	"io/ioutil"
@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func setUpRepo() (r *git.Repository, teardown func(), err error) {
+func SetUpRepo() (r *git.Repository, teardown func(), err error) {
 	dir, err := ioutil.TempDir("", "turbogit-test")
 	if err != nil {
 		return nil, func() {}, err
@@ -73,7 +73,7 @@ func setUpRepo() (r *git.Repository, teardown func(), err error) {
 	return r, teardown, nil
 }
 
-func stageNewFile(r *git.Repository) error {
+func StageNewFile(r *git.Repository) error {
 	// Create and stage file
 	wd, err := os.Getwd()
 	if err != nil {
@@ -94,7 +94,7 @@ func stageNewFile(r *git.Repository) error {
 	return nil
 }
 
-func lastTagFrom(r *git.Repository) (*plumbing.Reference, error) {
+func LastTagFrom(r *git.Repository) (*plumbing.Reference, error) {
 	tags, err := r.Tags()
 	if err != nil {
 		return nil, err
@@ -109,7 +109,7 @@ func lastTagFrom(r *git.Repository) (*plumbing.Reference, error) {
 	return tag, nil
 }
 
-func captureStd(t *testing.T, std *os.File) (f *os.File, reset func()) {
+func CaptureStd(t *testing.T, std *os.File) (f *os.File, reset func()) {
 	f, err := ioutil.TempFile("", path.Base(std.Name()))
 	require.NoError(t, err)
 
@@ -121,7 +121,7 @@ func captureStd(t *testing.T, std *os.File) (f *os.File, reset func()) {
 	return
 }
 
-func writeGitHook(t *testing.T, hook string, content string) {
+func WriteGitHook(t *testing.T, hook string, content string) {
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	hooks := path.Join(wd, ".git", "hooks")
