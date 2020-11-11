@@ -66,9 +66,10 @@ $ tug commit refactor a scopped refactor -s scope
 # Open your editor to edit the commit message
 $ tug commit ci -e message
 	`,
-	Args:      cobra.MinimumNArgs(1),
-	RunE:      commit,
-	ValidArgs: format.AllCommitType(),
+	Args:         cobra.MinimumNArgs(1),
+	SilenceUsage: true,
+	RunE:         commit,
+	ValidArgs:    format.AllCommitType(),
 }
 
 func commit(cmd *cobra.Command, args []string) error {
