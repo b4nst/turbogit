@@ -24,6 +24,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -116,16 +117,26 @@ func commit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Error during pre-commit hook: %s", err.Error())
 	}
 
-	// Parse commit type
-	ctype := format.FindCommitType(typeFlag)
-	if ctype == format.NilCommit {
-		return fmt.Errorf("'%s' is not a valid commit type", typeFlag)
+	msg, err := prepareCommitMsg(ctx)
+	if err != nil {
+		return fmt.Errorf("Error during prepare-commit-msg hook: %s", err.Error())
 	}
-	// Create message
-	msg := strings.Join(args, " ")
-	cmsg := format.CommitMessage(&format.CommitMessageOption{
-		Ctype: ctype, BreakingChanges: bc, Description: msg, Scope: scope,
-	})
+	cmo := format.ParseCommitMsg(msg)
+	if cmo == nil {
+		// Parse commit type
+		ctype := format.FindCommitType(typeFlag)
+		if ctype == format.NilCommit {
+			return fmt.Errorf("'%s' is not a valid commit type", typeFlag)
+		}
+		if msg == "" {
+			msg = strings.Join(args, " ")
+		}
+		cmo = &format.CommitMessageOption{
+			Ctype: ctype, BreakingChanges: bc, Description: msg, Scope: scope,
+		}
+	}
+
+	cmsg := format.CommitMessage(cmo)
 	if edit {
 		cmsg = promptEditor(cmsg)
 	}
@@ -189,6 +200,8 @@ func promptEditor(msg string) string {
 	return msg
 }
 
+// Hooks
+
 func preCommit(ctx *context.Context) error {
 	wt, err := ctx.Repo.Worktree()
 	if err != nil {
@@ -215,4 +228,49 @@ func preCommit(ctx *context.Context) error {
 	}
 
 	return cmd.Run()
+}
+
+func prepareCommitMsg(ctx *context.Context) (msg string, err error) {
+	wt, err := ctx.Repo.Worktree()
+	if err != nil {
+		return
+	}
+
+	script := path.Join(wt.Filesystem.Root(), ".git", "hooks", "prepare-commit-msg")
+	info, err := os.Stat(script)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", nil
+		}
+		return
+	}
+	if info.IsDir() {
+		err = fmt.Errorf("Pre-commit hook (.git/hooks/prepare-commit-msg) is a directory, it should be an executable file.")
+		return
+	}
+
+	file, err := ioutil.TempFile("", "commit-msg-")
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	cmd := &exec.Cmd{
+		Dir:    wt.Filesystem.Root(),
+		Path:   script,
+		Args:   []string{script, file.Name()},
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+	}
+	err = cmd.Run()
+	if err != nil {
+		return
+	}
+
+	content, err := ioutil.ReadAll(file)
+	if err != nil {
+		return
+	}
+	msg = string(content)
+	return
 }

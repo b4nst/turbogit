@@ -5,7 +5,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"syscall"
 	"testing"
 
 	"github.com/go-git/go-git/v5"
@@ -114,8 +113,9 @@ func captureStd(t *testing.T, std *os.File) (f *os.File, reset func()) {
 	f, err := ioutil.TempFile("", path.Base(std.Name()))
 	require.NoError(t, err)
 
+	backup := *std
 	reset = func() {
-		*std = *(os.NewFile(uintptr(syscall.Stdout), std.Name()))
+		*std = backup
 	}
 	*std = *f
 	return
