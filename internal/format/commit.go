@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/b4nst/turbogit/internal/constants"
+	"github.com/hpcloud/golor"
 )
 
 type CommitType int
@@ -26,6 +27,25 @@ const (
 
 func (b CommitType) String() string {
 	return [...]string{"build", "ci", "chore", "docs", "feat", "fix", "", "perf", "refactor", "style", "test"}[b]
+}
+
+func ColorizeCommitType(s string, ct CommitType) string {
+	switch ct {
+	case FeatureCommit:
+		return golor.Colorize(s, golor.GREEN, -1)
+	case DocCommit:
+		return golor.Colorize(s, golor.BLUE, -1)
+	case TestCommit, PerfCommit:
+		return golor.Colorize(s, golor.CYAN, -1)
+	case FixCommit:
+		return golor.Colorize(s, golor.MAGENTA, -1)
+	case CiCommit, BuildCommit:
+		return golor.Colorize(s, golor.YELLOW, -1)
+	case NilCommit:
+		return golor.Colorize(s, golor.GRAY, -1)
+	default:
+		return golor.Colorize(s, golor.WHITE, -1)
+	}
 }
 
 func AllCommitType() []string {
