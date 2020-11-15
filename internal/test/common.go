@@ -7,9 +7,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/b4nst/turbogit/internal/format"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/stretchr/testify/require"
 )
 
@@ -65,7 +67,7 @@ func SetUpRepo() (r *git.Repository, teardown func(), err error) {
 	cfg.Author.Email = "john@doe.org"
 	r.SetConfig(cfg)
 
-	_, err = w.Commit("example go-git commit", &git.CommitOptions{})
+	_, err = w.Commit(format.CommitMessage(&format.CommitMessageOption{Ctype: format.ChoreCommit, Description: "initial commit"}), &git.CommitOptions{})
 	if err != nil {
 		return nil, teardown, err
 	}
@@ -92,6 +94,18 @@ func StageNewFile(r *git.Repository) error {
 		return err
 	}
 	return nil
+}
+
+func AddCommit(t *testing.T, r *git.Repository, msg string) *object.Commit {
+	err := StageNewFile(r)
+	require.NoError(t, err)
+	wt, err := r.Worktree()
+	require.NoError(t, err)
+	h, err := wt.Commit(msg, &git.CommitOptions{})
+	require.NoError(t, err)
+	c, err := r.CommitObject(h)
+	require.NoError(t, err)
+	return c
 }
 
 func LastTagFrom(r *git.Repository) (*plumbing.Reference, error) {
