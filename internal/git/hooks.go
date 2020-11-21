@@ -46,6 +46,7 @@ func noArgHook(ctx *context.Context, hook string) error {
 		return nil
 	}
 
+	fmt.Printf("Running %s hook...\n", hook)
 	return cmd.Run()
 }
 
@@ -68,6 +69,7 @@ func fileHook(ctx *context.Context, hook string, initial string) (out string, er
 	file.Close()
 
 	cmd.Args = append(cmd.Args, file.Name())
+	fmt.Printf("Running %s hook...\n", hook)
 	err = cmd.Run()
 	if err != nil {
 		return
@@ -87,21 +89,17 @@ func fileHook(ctx *context.Context, hook string, initial string) (out string, er
 }
 
 func PreCommitHook(ctx *context.Context) error {
-	fmt.Println("Running pre-commit hook...")
 	return noArgHook(ctx, "pre-commit")
 }
 
 func PostCommitHook(ctx *context.Context) error {
-	fmt.Println("Running post-commit hook...")
 	return noArgHook(ctx, "post-commit")
 }
 
 func PrepareCommitMsgHook(ctx *context.Context) (msg string, err error) {
-	fmt.Println("Running prepare-commit-msg hook...")
 	return fileHook(ctx, "prepare-commit-msg", "")
 }
 
 func CommitMsgHook(ctx *context.Context, in string) (msg string, err error) {
-	fmt.Println("Running commit-msg hook...")
 	return fileHook(ctx, "commit-msg", in)
 }
