@@ -25,12 +25,16 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"strings"
 	"text/tabwriter"
+	"time"
 
+	"github.com/araddon/dateparse"
 	"github.com/b4nst/turbogit/internal/context"
 	"github.com/b4nst/turbogit/internal/format"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/hpcloud/golor"
 	"github.com/spf13/cobra"
@@ -48,6 +52,19 @@ var logCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(logCmd)
+
+	logCmd.Flags().BoolP("all", "a", false, "Pretend as if all the refs in refs/, along with HEAD, are listed on the command line as <commit>. If set on true, the --from option will be ignored.")
+	logCmd.Flags().Bool("no-color", false, "Disable color output")
+	logCmd.Flags().StringP("from", "f", "HEAD", "Logs only commits reachable from this one")
+	logCmd.Flags().String("since", "", "Show commits more recent than a specific date")
+	logCmd.Flags().String("until", "", "Show commits older than a specific date")
+	logCmd.Flags().String("path", "", "Filter commits based on the path of files that are updated. Accept regexp")
+	logCmd.Flags().Int("hash-length", 7, "Commit hash length. Set a value <=0 to get the full length")
+	// Filters
+	logCmd.Flags().StringArrayP("type", "t", []string{}, "Filter commits by type (repeatable option)")
+	commitCmd.RegisterFlagCompletionFunc("type", typeFlagCompletion)
+	logCmd.Flags().StringArrayP("scope", "s", []string{}, "Filter commits by scope (repeatable option)")
+	logCmd.Flags().BoolP("breaking-changes", "c", false, "Only shows breaking changes")
 }
 
 func runLog(cmd *cobra.Command, args []string) error {
@@ -56,38 +73,156 @@ func runLog(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	cIter, err := ctx.Repo.Log(&git.LogOptions{Order: git.LogOrderCommitterTime})
+	// --all
+	fAll, err := cmd.Flags().GetBool("all")
+	if err != nil {
+		return err
+	}
+	// --no-color
+	fNoColor, err := cmd.Flags().GetBool("no-color")
+	if err != nil {
+		return err
+	}
+	// --from
+	fFrom, err := cmd.Flags().GetString("from")
+	if err != nil {
+		return err
+	}
+	// --hash-length
+	fHLength, err := cmd.Flags().GetInt("hash-length")
+	if err != nil {
+		return err
+	}
+	// --since
+	fSince, err := cmd.Flags().GetString("since")
+	if err != nil {
+		return err
+	}
+	var since *time.Time
+	if fSince != "" {
+		*since, err = dateparse.ParseAny(fSince)
+		if err != nil {
+			return err
+		}
+	}
+	// --until
+	fUntil, err := cmd.Flags().GetString("until")
+	if err != nil {
+		return err
+	}
+	var until *time.Time
+	if fUntil != "" {
+		*until, err = dateparse.ParseAny(fUntil)
+		if err != nil {
+			return err
+		}
+	}
+	// --path
+	fPath, err := cmd.Flags().GetString("path")
+	if err != nil {
+		return err
+	}
+	var pathFilter func(string) bool
+	if fPath != "" {
+		pathReg, err := regexp.Compile(fPath)
+		if err != nil {
+			return err
+		}
+		pathFilter = func(p string) bool { return pathReg.MatchString(p) }
+	}
+	// Filters
+	filters := []FilterCommit{}
+	fTypes, err := cmd.Flags().GetStringArray("type")
+	if err != nil {
+		return err
+	}
+	if len(fTypes) > 0 {
+		types := make([]format.CommitType, len(fTypes))
+		for i, v := range fTypes {
+			types[i] = format.FindCommitType(v)
+		}
+		filters = append(filters, func(c *object.Commit, co *format.CommitMessageOption) bool {
+			for _, t := range types {
+				if co.Ctype == t {
+					return true
+				}
+			}
+			return false
+		})
+	}
+	fScopes, err := cmd.Flags().GetStringArray("scope")
+	if err != nil {
+		return err
+	}
+	if len(fScopes) > 0 {
+		filters = append(filters, func(c *object.Commit, co *format.CommitMessageOption) bool {
+			for _, s := range fScopes {
+				if co.Scope == s {
+					return true
+				}
+			}
+			return false
+		})
+	}
+	fBreakingChanges, err := cmd.Flags().GetBool("breaking-changes")
+	if err != nil {
+		return err
+	}
+	if fBreakingChanges {
+		filters = append(filters, func(c *object.Commit, co *format.CommitMessageOption) bool {
+			return co.BreakingChanges
+		})
+	}
+
+	from, err := ctx.Repo.ResolveRevision(plumbing.Revision(fFrom))
+	if err != nil {
+		return fmt.Errorf("Error looking for commit %s: %s", fFrom, err)
+	}
+	cIter, err := ctx.Repo.Log(&git.LogOptions{Order: git.LogOrderCommitterTime, All: fAll, From: *from, Since: since, Until: until, PathFilter: pathFilter})
 	if err != nil {
 		return err
 	}
 	w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, ' ', 0)
 	cIter.ForEach(func(c *object.Commit) error {
-		fprettyprint(w, c, 7, true)
-		fmt.Fprintln(w)
+		co := format.ParseCommitMsg(c.Message)
+		parsed := true
+		if co == nil {
+			parsed = false
+			sm := strings.SplitN(c.Message, "\n", 2)
+			co = &format.CommitMessageOption{
+				Description: sm[0],
+				Ctype:       format.NilCommit,
+			}
+			if len(sm) > 1 {
+				co.Body = strings.Join(sm[1:], "\n")
+			}
+		}
+		if applyFilters(c, co, filters...) {
+			fprettyprint(w, c, co, fHLength, !fNoColor, parsed)
+			fmt.Fprintln(w)
+		}
 		return nil
 	})
 	return nil
 }
 
-// Format commit to pretty string (mostly for log usage)
-func fprettyprint(w io.Writer, c *object.Commit, hLength int, color bool) {
-	co := format.ParseCommitMsg(c.Message)
-	parsed := true
-	if co == nil {
-		parsed = false
-		sm := strings.SplitN(c.Message, "\n", 2)
-		co = &format.CommitMessageOption{
-			Description: sm[0],
-			Ctype:       format.NilCommit,
-		}
-		if len(sm) > 1 {
-			co.Body = strings.Join(sm[1:], "\n")
+type FilterCommit func(*object.Commit, *format.CommitMessageOption) bool
+
+func applyFilters(c *object.Commit, co *format.CommitMessageOption, filters ...FilterCommit) bool {
+	keep := true
+	for _, f := range filters {
+		if !f(c, co) {
+			keep = false
+			break
 		}
 	}
+	return keep
+}
 
+func fprettyprint(w io.Writer, c *object.Commit, co *format.CommitMessageOption, hLength int, color bool, parsed bool) {
 	// Hash
 	h := c.Hash.String()
-	if hLength > len(h) || hLength < 0 {
+	if hLength > len(h) || hLength <= 0 {
 		hLength = len(h)
 	}
 	h = h[0:hLength] // Truncate
