@@ -27,6 +27,7 @@ jobs:
           cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_CLAR=OFF
           sudo cmake --build . --target install
           cd -
+          rm -rf libgit2-1.0.1
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
