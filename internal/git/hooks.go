@@ -6,18 +6,12 @@ import (
 	"os"
 	"os/exec"
 	"path"
-
-	"github.com/b4nst/turbogit/internal/context"
 )
 
 // Hooks
 
-func hookCmd(ctx *context.Context, hook string) (*exec.Cmd, error) {
-	wt, err := ctx.Repo.Worktree()
-	if err != nil {
-		return nil, err
-	}
-	script := path.Join(wt.Filesystem.Root(), ".git", "hooks", hook)
+func hookCmd(root string, hook string) (*exec.Cmd, error) {
+	script := path.Join(root, ".git", "hooks", hook)
 	info, err := os.Stat(script)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -29,7 +23,7 @@ func hookCmd(ctx *context.Context, hook string) (*exec.Cmd, error) {
 		return nil, fmt.Errorf("Hook .git/hooks/%s is a directory, it should be an executable file.", hook)
 	}
 	return &exec.Cmd{
-		Dir:    wt.Filesystem.Root(),
+		Dir:    root,
 		Path:   script,
 		Args:   []string{script},
 		Stdout: os.Stdout,
@@ -37,8 +31,8 @@ func hookCmd(ctx *context.Context, hook string) (*exec.Cmd, error) {
 	}, nil
 }
 
-func noArgHook(ctx *context.Context, hook string) error {
-	cmd, err := hookCmd(ctx, hook)
+func noArgHook(root string, hook string) error {
+	cmd, err := hookCmd(root, hook)
 	if err != nil {
 		return err
 	}
@@ -50,9 +44,9 @@ func noArgHook(ctx *context.Context, hook string) error {
 	return cmd.Run()
 }
 
-func fileHook(ctx *context.Context, hook string, initial string) (out string, err error) {
+func fileHook(root string, hook string, initial string) (out string, err error) {
 	out = initial
-	cmd, err := hookCmd(ctx, hook)
+	cmd, err := hookCmd(root, hook)
 	if cmd == nil {
 		return initial, nil
 	}
@@ -88,18 +82,18 @@ func fileHook(ctx *context.Context, hook string, initial string) (out string, er
 	return
 }
 
-func PreCommitHook(ctx *context.Context) error {
-	return noArgHook(ctx, "pre-commit")
+func PreCommitHook(root string) error {
+	return noArgHook(root, "pre-commit")
 }
 
-func PostCommitHook(ctx *context.Context) error {
-	return noArgHook(ctx, "post-commit")
+func PostCommitHook(root string) error {
+	return noArgHook(root, "post-commit")
 }
 
-func PrepareCommitMsgHook(ctx *context.Context) (msg string, err error) {
-	return fileHook(ctx, "prepare-commit-msg", "")
+func PrepareCommitMsgHook(root string) (msg string, err error) {
+	return fileHook(root, "prepare-commit-msg", "")
 }
 
-func CommitMsgHook(ctx *context.Context, in string) (msg string, err error) {
-	return fileHook(ctx, "commit-msg", in)
+func CommitMsgHook(root string, in string) (msg string, err error) {
+	return fileHook(root, "commit-msg", in)
 }
