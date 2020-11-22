@@ -1,137 +1,128 @@
 package cmd
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
-	"github.com/b4nst/turbogit/internal/context"
-	"github.com/b4nst/turbogit/internal/test"
-	"github.com/go-git/go-git/v5"
+	"github.com/b4nst/turbogit/internal/format"
+	git "github.com/libgit2/git2go/v30"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestWriteCommit(t *testing.T) {
-	r, teardown, err := test.SetUpRepo()
-	defer teardown()
+	dir, err := ioutil.TempDir("", "turbogit-test-commit")
 	require.NoError(t, err)
+	defer os.RemoveAll(dir)
+	require.NoError(t, os.Chdir(dir))
 
-	cmd := &cobra.Command{}
-	ctx, err := context.FromCommand(cmd)
+	r, err := git.InitRepository(dir, false)
 	require.NoError(t, err)
-	assert.NoError(t, writeCommit(ctx, "commit message"))
+	config, err := r.Config()
+	require.NoError(t, err)
+	require.NoError(t, config.SetString("user.name", "alice"))
+	require.NoError(t, config.SetString("user.email", "alice@ecorp.com"))
+	f, err := ioutil.TempFile(dir, "test-commit")
+	require.NoError(t, err)
+	frel, err := filepath.Rel(dir, f.Name())
+	require.NoError(t, err)
+	idx, err := r.Index()
+	require.NoError(t, err)
+	require.NoError(t, idx.AddByPath(frel))
 
-	citer, err := r.Log(&git.LogOptions{})
+	commit, err := writeCommit(r, "commit message")
+	assert.NoError(t, err)
+	assert.Equal(t, "commit message", commit.Message())
+	assert.Equal(t, "alice", commit.Author().Name)
+	assert.Equal(t, "alice@ecorp.com", commit.Author().Email)
+	assert.WithinDuration(t, time.Now(), commit.Author().When, time.Second)
+	head, err := r.Head()
 	require.NoError(t, err)
-
-	c, err := citer.Next()
+	headCommit, err := r.LookupCommit(head.Target())
 	require.NoError(t, err)
-	assert.Equal(t, "commit message", c.Message)
+	assert.Equal(t, headCommit.Id(), commit.Id())
 }
 
 func TestNeedCommit(t *testing.T) {
-	r, teardown, err := test.SetUpRepo()
-	defer teardown()
+	dir, err := ioutil.TempDir("", "turbogit-test-commit")
+	require.NoError(t, err)
+	defer os.RemoveAll(dir)
+	require.NoError(t, os.Chdir(dir))
+
+	r, err := git.InitRepository(dir, false)
 	require.NoError(t, err)
 
-	cmd := &cobra.Command{}
-	ctx, err := context.FromCommand(cmd)
-	require.NoError(t, err)
-
-	nc, err := needCommit(ctx)
+	nc, err := needCommit(r)
 	assert.NoError(t, err)
 	assert.False(t, nc)
 
-	wd, err := os.Getwd()
-	filename := filepath.Join(wd, "TestIsWorkingTreeClean")
+	fmt.Println("Writing file")
+	filename := filepath.Join(dir, "TestIsWorkingTreeClean")
 	require.NoError(t, ioutil.WriteFile(filename, []byte("hello world!"), 0644))
+	fmt.Println("Writing file done")
 
-	nc, err = needCommit(ctx)
-	assert.EqualError(t, err, "no changes added to commit")
+	nc, err = needCommit(r)
+	assert.EqualError(t, err, "No changes added to commit")
 
-	wt, err := r.Worktree()
+	idx, err := r.Index()
 	require.NoError(t, err)
-	_, err = wt.Add("TestIsWorkingTreeClean")
-	assert.NoError(t, err)
-	nc, err = needCommit(ctx)
+	require.NoError(t, idx.AddByPath("TestIsWorkingTreeClean"))
+
+	nc, err = needCommit(r)
 	assert.NoError(t, err)
 	assert.True(t, nc)
 }
 
-func TestCommit(t *testing.T) {
-	r, teardown, err := test.SetUpRepo()
-	defer teardown()
+func TestSignature(t *testing.T) {
+	dir, err := ioutil.TempDir("", "turbogit-test-commit")
+	require.NoError(t, err)
+	defer os.RemoveAll(dir)
+	require.NoError(t, os.Chdir(dir))
+
+	r, err := git.InitRepository(dir, false)
+	require.NoError(t, err)
+	config, err := r.Config()
+	require.NoError(t, err)
+	require.NoError(t, config.SetString("user.name", "alice"))
+	require.NoError(t, config.SetString("user.email", "alice@ecorp.com"))
+
+	sig, err := signature(r)
+	require.NoError(t, err)
+	assert.Equal(t, "alice", sig.Name)
+	assert.Equal(t, "alice@ecorp.com", sig.Email)
+	assert.WithinDuration(t, time.Now(), sig.When, time.Second)
+}
+
+func TestParseCommitCmd(t *testing.T) {
+	dir, err := ioutil.TempDir("", "turbogit-test-commit")
+	require.NoError(t, err)
+	defer os.RemoveAll(dir)
+	require.NoError(t, os.Chdir(dir))
+
+	r, err := git.InitRepository(dir, false)
 	require.NoError(t, err)
 
 	cmd := &cobra.Command{}
 
-	stdout := os.Stdout
-	restore := func() {
-		os.Stdout = stdout
+	cmd.Flags().StringP("type", "t", "fix", "")
+	cmd.Flags().BoolP("breaking-changes", "c", true, "")
+	cmd.Flags().BoolP("edit", "e", true, "")
+	cmd.Flags().StringP("scope", "s", "scope", "")
+
+	cco, err := parseCommitCmd(cmd, []string{"hello", "world!"})
+	require.NoError(t, err)
+	expected := CommitCmdOption{
+		CType:           format.FixCommit,
+		Message:         "hello world!",
+		Scope:           "scope",
+		BreakingChanges: true,
+		PromptEditor:    true,
+		Repo:            r,
 	}
-	defer restore()
-
-	devnull, err := ioutil.TempFile("", "dev-null")
-	require.NoError(t, err)
-	defer os.RemoveAll(devnull.Name())
-	os.Stdout = devnull
-
-	fType := cmd.Flags().StringP("type", "t", "", "")
-	fBreak := cmd.Flags().BoolP("breaking-changes", "c", false, "")
-	cmd.Flags().BoolP("edit", "e", false, "")
-	fScope := cmd.Flags().StringP("scope", "s", "", "")
-
-	assertLastCommit := func(msg string) {
-		citer, err := r.Log(&git.LogOptions{})
-		require.NoError(t, err)
-		c, err := citer.Next()
-		require.NoError(t, err)
-		assert.Equal(t, msg, c.Message)
-	}
-
-	// Bad commit type
-	*fType = ""
-	*fBreak = false
-	*fScope = ""
-	require.NoError(t, test.StageNewFile(r))
-	assert.Error(t, commit(cmd, []string{"not-type"}))
-	// Feat
-	*fType = "feat"
-	*fBreak = false
-	*fScope = ""
-	require.NoError(t, test.StageNewFile(r))
-	assert.NoError(t, commit(cmd, []string{"my", "message"}))
-	assertLastCommit("feat: my message")
-	// Breaking change
-	*fType = ""
-	*fBreak = true
-	*fScope = ""
-	require.NoError(t, test.StageNewFile(r))
-	assert.NoError(t, commit(cmd, []string{"fix", "my", "message"}))
-	assertLastCommit("fix!: my message")
-	// Scope
-	*fType = ""
-	*fBreak = false
-	*fScope = "scope"
-	require.NoError(t, test.StageNewFile(r))
-	assert.NoError(t, commit(cmd, []string{"test", "my", "message"}))
-	assertLastCommit("test(scope): my message")
-	// Workdir clean
-	*fType = ""
-	*fBreak = false
-	*fScope = ""
-	assert.NoError(t, commit(cmd, []string{"fix", "not", "committed"}))
-	assertLastCommit("test(scope): my message")
-	// Unstaged files
-	wd, err := os.Getwd()
-	require.NoError(t, err)
-	_, err = ioutil.TempFile(wd, "*")
-	require.NoError(t, err)
-	*fType = ""
-	*fBreak = false
-	*fScope = ""
-	assert.EqualError(t, commit(cmd, []string{"fix", "not", "committed"}), "no changes added to commit")
+	assert.Equal(t, expected, *cco)
 }

@@ -22,6 +22,14 @@ jobs:
 
       - name: Get dependencies
         run: |
+          sudo apt update
+          sudo apt install cmake curl libssl-dev
+          curl -L https://github.com/libgit2/libgit2/releases/download/v1.0.1/libgit2-1.0.1.tar.gz | tar -xz
+          mkdir -p libgit2-1.0.1/build
+          cd libgit2-1.0.1/build
+          cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_CLAR=OFF
+          sudo cmake --build . --target install
+          cd -
           go get -v -t -d ./...
           if [ -f Gopkg.toml ]; then
               curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh

@@ -23,6 +23,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path"
 
@@ -57,6 +58,7 @@ func Execute() {
 }
 
 func init() {
+	log.SetFlags(0)
 	cobra.OnInitialize(initConfig)
 
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf("config file (default is $HOME/.config/%s/%s.toml)", BIN_NAME, BIN_NAME))
