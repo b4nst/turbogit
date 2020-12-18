@@ -3,7 +3,7 @@ module github.com/b4nst/turbogit
 go 1.14
 
 require (
-	github.com/AlecAivazis/survey/v2 v2.2.2
+	github.com/AlecAivazis/survey/v2 v2.2.7
 	github.com/araddon/dateparse v0.0.0-20201001162425-8aadafed4dc4
 	github.com/blang/semver/v4 v4.0.0
 	github.com/go-git/go-git/v5 v5.2.0
