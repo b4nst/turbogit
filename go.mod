@@ -9,7 +9,6 @@ require (
 	github.com/go-git/go-git/v5 v5.2.0
 	github.com/hpcloud/golor v0.0.0-20150914221010-dc1b58c471a0
 	github.com/libgit2/git2go/v30 v30.3.6
-	github.com/libgit2/git2go/v31 v31.3.2 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.1
