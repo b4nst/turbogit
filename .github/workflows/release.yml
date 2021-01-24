@@ -3,20 +3,44 @@ name: release
 on:
   push:
     tags:
-      - "*"
+      - "v*"
 
 jobs:
-  goreleaser:
+  create_release:
+    name: Create release
     runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v2
-      - name: Unshallow
-        run: git fetch --prune --unshallow
-      - name: Set up Go
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+  package_linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    needs: create_release
+    env:
+      GOOS: linux
+      GOARCH: amd64
+      ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', github.ref, env.GOOS, env.GOARCH) }}
+    steps:
+      - name: Set up Go 1.x
         uses: actions/setup-go@v2
         with:
-          go-version: 1.14
+          go-version: ^1.14
+        id: go
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
       - name: Get dependencies
         run: |
           sudo apt update
@@ -28,10 +52,62 @@ jobs:
           sudo cmake --build . --target install
           cd -
           rm -rf libgit2-1.0.1
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v2
-        with:
-          version: latest
-          args: release --rm-dist
+          go get -v -t -d ./...
+          if [ -f Gopkg.toml ]; then
+              curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+              dep ensure
+          fi
+      - name: Package
         env:
-          GITHUB_TOKEN: ${{ secrets.UPLOAD_GITHUB_TOKEN }}
+          TUG_COMMIT: ${{ github.sha }}
+          TUG_VERSION: ${{ github.ref }}
+        run: |
+          make build
+          tar -zcvf ${ASSET_NAME} bin/tug
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ./${{ env.ASSET_NAME }}
+          asset_name: ${{ env.ASSET_NAME }}
+          asset_content_type: application/gzip
+
+  package_darwin:
+    name: Package macOS
+    runs-on: macos-latest
+    needs: create_release
+    env:
+      GOOS: darwin
+      GOARCH: amd64
+      ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', github.ref, env.GOOS, env.GOARCH) }}
+    steps:
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.14
+        id: go
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          wget https://raw.githubusercontent.com/Homebrew/homebrew-core/1ca11b5a5dbd39d483602e73ddcea78ca8a65de8/Formula/libgit2.rb
+          brew install ./libgit2.rb
+      - name: Package
+        env:
+          TUG_COMMIT: ${{ github.sha }}
+          TUG_VERSION: ${{ github.ref }}
+        run: |
+          make build
+          tar -zcvf ${ASSET_NAME} bin/tug
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ./${{ env.ASSET_NAME }}
+          asset_name: ${{ env.ASSET_NAME }}
+          asset_content_type: application/gzip
+
