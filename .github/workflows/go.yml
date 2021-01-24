@@ -7,8 +7,8 @@ on:
     branches: [master]
 
 jobs:
-  build:
-    name: Build
+  build_linux:
+    name: Build Linux
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go 1.x
@@ -53,3 +53,42 @@ jobs:
         env:
           CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
         run: ./cc-reporter after-build --coverage-input-type gocov -p github.com/b4nst/turbogit
+  build_macos:
+    name: Build macOS
+    runs-on: macos-latest
+    steps:
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.14
+        id: go
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          wget https://raw.githubusercontent.com/Homebrew/homebrew-core/1ca11b5a5dbd39d483602e73ddcea78ca8a65de8/Formula/libgit2.rb
+          brew install ./libgit2.rb
+      - name: Build
+        run: make build
+      - name: Test
+        run: make test
+  # build_windows:
+  #   name: Build Windows
+  #   runs-on: windows-latest
+  #   steps:
+  #     - name: Set up Go 1.x
+  #       uses: actions/setup-go@v2
+  #       with:
+  #         go-version: ^1.14
+  #       id: go
+  #     - name: Check out code into the Go module directory
+  #       uses: actions/checkout@v2
+  #     - name: Install dependencies
+  #       run: |
+  #         C:\msys64\usr\bin\wget.exe -q http://repo.msys2.org/mingw/x86_64/mingw-w64-x86_64-libgit2-1.0.1-1-any.pkg.tar.zst
+  #         C:\msys64\usr\bin\pacman --noconfirm -U mingw-w64-x86_64-libgit2-1.0.1-1-any.pkg.tar.zst
+  #         C:\msys64\usr\bin\perl -MCPAN -e instal Pod::Usage
+  #     - name: Build
+  #       run: make build
+  #     - name: Test
+  #       run: make test
