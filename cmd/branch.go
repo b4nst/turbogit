@@ -24,19 +24,24 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"log"
+	"os"
 	"strings"
 
-	"github.com/b4nst/turbogit/internal/context"
 	"github.com/b4nst/turbogit/internal/format"
 
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/config"
-	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/libgit2/git2go/v30"
 	"github.com/spf13/cobra"
 )
 
 func init() {
 	RootCmd.AddCommand(branchCmd)
+}
+
+type BranchCmdOption struct {
+	BType format.BranchType
+	Name  string
+	Repo  *git.Repository
 }
 
 var branchCmd = &cobra.Command{
@@ -50,52 +55,98 @@ $ tug branch feat my feature
 # Create branch user/alice/my-branch, given that alice is the current tug/git user
 $ tug branch user my branch
 	`,
-	Args:      cobra.MinimumNArgs(1),
-	ValidArgs: format.AllBranchType(),
-	RunE:      branch,
+	Args:         cobra.MinimumNArgs(1),
+	SilenceUsage: true,
+	ValidArgs:    format.AllBranchType(),
+	Run:          runBranchCmd,
 }
 
-func branch(cmd *cobra.Command, args []string) error {
-	ctx, err := context.FromCommand(cmd)
+func runBranchCmd(cmd *cobra.Command, args []string) {
+	bco, err := parseBranchCmd(cmd, args)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
+	err = runBranch(bco)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
+func parseBranchCmd(cmd *cobra.Command, args []string) (*BranchCmdOption, error) {
 	btype, err := format.BranchTypeFrom(args[0])
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if btype != format.UserBranch && len(args) < 2 {
-		return fmt.Errorf("%s branches need a description.", btype)
+		return nil, fmt.Errorf("%s branches need a description.", btype)
 	}
 
-	headRef, err := ctx.Repo.Head()
+	// Find repo
+	wd, err := os.Getwd()
 	if err != nil {
-		return err
+		return nil, err
+	}
+	rpath, err := git.Discover(wd, false, nil)
+	if err != nil {
+		return nil, err
+	}
+	repo, err := git.OpenRepository(rpath)
+	if err != nil {
+		return nil, err
 	}
 
-	// Format branch name
-	cfg, err := ctx.Repo.ConfigScoped(config.SystemScope)
-	if btype == format.UserBranch && cfg.User.Name == "" {
-		return errors.New("You need to configure your username before creating a user branch.")
+	// Get user name from config
+	config, err := repo.Config()
+	if err != nil {
+		return nil, err
 	}
-	d := strings.Join(args[1:], "-")
-	branch_name := plumbing.NewBranchReferenceName(format.BranchName(btype, d, cfg.User.Name))
+	username, _ := config.LookupString("user.name")
+	// Format branch name
+	if btype == format.UserBranch && username == "" {
+		return nil, errors.New("You need to configure your username before creating a user branch.")
+	}
+
+	return &BranchCmdOption{
+		BType: btype,
+		Name:  format.BranchName(btype, strings.Join(args[1:], "-"), username),
+		Repo:  repo,
+	}, nil
+}
+
+func runBranch(bco *BranchCmdOption) error {
+	r := bco.Repo
+
+	var t *git.Commit = nil
+	head, err := r.Head()
+	if err == nil {
+		t, err = r.LookupCommit(head.Target())
+		if err != nil {
+			return err
+		}
+	}
+	if t == nil {
+		return errors.New("No commit to create branch from, please create the initial commit")
+	}
 
 	// Create new branch
-	ref := plumbing.NewHashReference(branch_name, headRef.Hash())
-	if err := ctx.Repo.Storer.SetReference(ref); err != nil {
-		return err
-	}
-
-	// Checkout former branch
-	w, err := ctx.Repo.Worktree()
+	b, err := r.CreateBranch(bco.Name, t, false)
 	if err != nil {
 		return err
 	}
-	if err := w.Checkout(&git.CheckoutOptions{Branch: ref.Name()}); err != nil {
+	bc, err := r.LookupCommit(b.Target())
+	if err != nil {
+		return err
+	}
+	tree, err := r.LookupTree(bc.TreeId())
+	if err != nil {
 		return err
 	}
 
-	return nil
+	// Checkout the branch
+	err = r.CheckoutTree(tree, &git.CheckoutOpts{Strategy: git.CheckoutSafe})
+	if err != nil {
+		return err
+	}
+	err = r.SetHead(b.Reference.Name())
+	return err
 }
