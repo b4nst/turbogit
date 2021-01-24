@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
+      raw_tag: ${{ steps.get_version.outputs.VERSION }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -24,6 +25,9 @@ jobs:
           release_name: Release ${{ github.event.ref }}
           draft: false
           prerelease: false
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
 
   package_linux:
     name: Package Linux
@@ -60,7 +64,7 @@ jobs:
         env:
           TUG_COMMIT: ${{ github.sha }}
           TUG_VERSION: ${{ github.event.ref }}
-          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', github.event.ref, env.GOOS, env.GOARCH) }}
+          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
         run: |
           make build
           tar -zcvf ${ASSET_NAME} bin/tug
@@ -68,7 +72,7 @@ jobs:
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', github.event.ref, env.GOOS, env.GOARCH) }}
+          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
           asset_path: ./${{ env.ASSET_NAME }}
@@ -98,7 +102,7 @@ jobs:
         env:
           TUG_COMMIT: ${{ github.sha }}
           TUG_VERSION: ${{ github.event.ref }}
-          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', github.event.ref, env.GOOS, env.GOARCH) }}
+          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
         run: |
           make build
           tar -zcvf ${ASSET_NAME} bin/tug
@@ -106,7 +110,7 @@ jobs:
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', github.event.ref, env.GOOS, env.GOARCH) }}
+          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
           asset_path: ./${{ env.ASSET_NAME }}
