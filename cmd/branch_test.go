@@ -1,63 +1,51 @@
 package cmd
 
 import (
+	"io/ioutil"
+	"os"
 	"testing"
+	"time"
 
-	"github.com/b4nst/turbogit/internal/test"
-	"github.com/go-git/go-git/v5/config"
-	"github.com/spf13/cobra"
+	"github.com/b4nst/turbogit/internal/format"
+	"github.com/libgit2/git2go/v30"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestBranchCreate(t *testing.T) {
-	r, teardown, err := test.SetUpRepo()
-	defer teardown()
+	// Init git repository in tmp dir
+	dir, err := ioutil.TempDir("", "turbogit-test-commit")
+	require.NoError(t, err)
+	defer os.RemoveAll(dir)
+	require.NoError(t, os.Chdir(dir))
+	r, err := git.InitRepository(dir, false)
 	require.NoError(t, err)
 
-	cmd := &cobra.Command{}
-
-	assertBranchIs := func(expected string) {
-		ref, err := r.Head()
-		require.NoError(t, err)
-		assert.True(t, ref.Name().IsBranch(), "Should be a branch")
-		assert.Equal(t, expected, ref.Name().Short())
+	bco := &BranchCmdOption{
+		format.FeatureBranch,
+		"feat/foo",
+		r,
 	}
+	// Sanity test
+	err = runBranch(bco)
+	assert.Error(t, err, "No commit to create branch from, please create the initial commit")
+	// Actually create branch
+	config, err := r.Config()
+	require.NoError(t, err)
+	require.NoError(t, config.SetString("user.name", "alice"))
+	require.NoError(t, config.SetString("user.email", "alice@ecorp.com"))
+	sig := &git.Signature{"alice@ecorp.com", "alice", time.Now()}
+	idx, err := r.Index()
+	require.NoError(t, err)
+	treeId, err := idx.WriteTree()
+	require.NoError(t, err)
+	tree, err := r.LookupTree(treeId)
+	require.NoError(t, err)
+	_, err = r.CreateCommit("HEAD", sig, sig, "Initial commit", tree)
 
-	// feature branch
-	err = branch(cmd, []string{"feat"})
-	assert.Error(t, err)
-	err = branch(cmd, []string{"feat", "my", "feature"})
+	err = runBranch(bco)
 	assert.NoError(t, err)
-	assertBranchIs("feat/my-feature")
-
-	// fix branc
-	err = branch(cmd, []string{"fix"})
-	assert.Error(t, err)
-	err = branch(cmd, []string{"fix", "my", "fix"})
-	assert.NoError(t, err)
-	assertBranchIs("fix/my-fix")
-
-	// user with no description
-	cfg := config.NewConfig()
-	cfg.User = struct {
-		Name  string
-		Email string
-	}{"bob", "bob@company.com"}
-	r.SetConfig(cfg)
-	err = branch(cmd, []string{"user"})
-	assert.NoError(t, err)
-	assertBranchIs("user/bob")
-
-	// user with description
-	cfg = config.NewConfig()
-	cfg.User = struct {
-		Name  string
-		Email string
-	}{"alice", "alice@company.com"}
-	r.SetConfig(cfg)
-	err = branch(cmd, []string{"user", "my", "branch"})
-	assert.NoError(t, err)
-	assertBranchIs("user/alice/my-branch")
-
+	h, err := r.Head()
+	require.NoError(t, err)
+	assert.Equal(t, "refs/heads/"+bco.Name, h.Name())
 }
