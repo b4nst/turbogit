@@ -22,20 +22,29 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"errors"
 	"fmt"
-	"io"
+	"log"
 	"os"
-	"strings"
 
-	"github.com/b4nst/turbogit/internal/context"
 	"github.com/b4nst/turbogit/internal/format"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/libgit2/git2go/v30"
 	"github.com/spf13/cobra"
 )
 
-// checkCmd represents the check command
+func init() {
+	RootCmd.AddCommand(checkCmd)
+
+	checkCmd.Flags().BoolP("all", "a", false, "Check all the commits in refs/*, along with HEAD")
+	checkCmd.Flags().StringP("from", "f", "HEAD", "Commit to start from. Can be a hash or any revision as accepted by rev parse.")
+}
+
+type CheckCmdOption struct {
+	All  bool
+	From string
+	Repo *git.Repository
+}
+
 var checkCmd = &cobra.Command{
 	Use:                   "check",
 	Short:                 "Check the history to follow conventional commit",
@@ -46,57 +55,98 @@ $ tug check
 `,
 	Args:         cobra.NoArgs,
 	SilenceUsage: true,
-	RunE:         runCheck,
+	Run:          runCheckCmd,
 }
 
-func init() {
-	RootCmd.AddCommand(checkCmd)
-
-	checkCmd.Flags().BoolP("all", "a", false, "Check all the refs in refs/, along with HEAD")
-	checkCmd.Flags().StringP("from", "f", "HEAD", "Hash of the commit to start from")
-}
-
-func runCheck(cmd *cobra.Command, args []string) error {
-	ctx, err := context.FromCommand(cmd)
+func runCheckCmd(cmd *cobra.Command, args []string) {
+	cco, err := parseCheckCmd(cmd, args)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
-	// Flags
+	err = runCheck(cco)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func parseCheckCmd(cmd *cobra.Command, args []string) (*CheckCmdOption, error) {
 	// --all
 	fAll, err := cmd.Flags().GetBool("all")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// --from
 	fFrom, err := cmd.Flags().GetString("from")
 	if err != nil {
-		return err
-	}
-	from, err := ctx.Repo.ResolveRevision(plumbing.Revision(fFrom))
-	if err != nil {
-		return fmt.Errorf("Error looking for commit %s: %s", fFrom, err)
+		return nil, err
 	}
 
-	cIter, err := ctx.Repo.Log(&git.LogOptions{Order: git.LogOrderCommitterTime, All: fAll, From: *from})
-	clean, checked := true, 0
-	for c, err := cIter.Next(); err == nil; c, err = cIter.Next() {
-		clean, checked = checkCommit(c) && clean, checked+1
+	// Find repo
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
 	}
-	if err != nil && err != io.EOF {
-		return err
+	rpath, err := git.Discover(wd, false, nil)
+	if err != nil {
+		return nil, err
 	}
-	if !clean {
-		return fmt.Errorf("The previous commit(s) do(es) not respect Conventional Commit.")
+	repo, err := git.OpenRepository(rpath)
+	if err != nil {
+		return nil, err
 	}
-	fmt.Printf("%d commit(s) checked.", checked)
-	return nil
+
+	return &CheckCmdOption{
+		All:  fAll,
+		From: fFrom,
+		Repo: repo,
+	}, nil
 }
 
-func checkCommit(c *object.Commit) bool {
-	co := format.ParseCommitMsg(c.Message)
-	if co == nil {
-		fmt.Fprintln(os.Stderr, c.Hash, strings.SplitN(c.Message, "\n", 2)[0])
-		return false
+func runCheck(cco *CheckCmdOption) error {
+	r := cco.Repo
+
+	walk, err := r.Walk()
+	if err != nil {
+		return err
 	}
-	return true
+	if cco.All {
+		if err := walk.PushGlob("refs/*"); err != nil {
+			return err
+		}
+	} else {
+		from, err := r.RevparseSingle(cco.From)
+		if err != nil {
+			return err
+		}
+		if err := walk.Push(from.Id()); err != nil {
+			return err
+		}
+	}
+
+	// Non format compliant commits
+	var nfc []git.Commit
+
+	walker := func(c *git.Commit) bool {
+		co := format.ParseCommitMsg(c.Message())
+		if co == nil {
+			nfc = append(nfc, *c)
+		}
+		return true
+	}
+	if err := walk.Iterate(walker); err != nil {
+		return err
+	}
+	if len(nfc) == 0 {
+		fmt.Println("All commits are compliant")
+		return nil
+	} else {
+		for _, c := range nfc {
+			sid, err := c.ShortId()
+			if err != nil {
+				sid = c.Id().String()
+			}
+			fmt.Fprintln(os.Stderr, sid, c.Summary())
+		}
+		return errors.New("This commits are not compliant")
+	}
 }
