@@ -24,31 +24,17 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
-	"regexp"
-	"strings"
 	"text/tabwriter"
 	"time"
 
 	"github.com/araddon/dateparse"
-	"github.com/b4nst/turbogit/internal/context"
 	"github.com/b4nst/turbogit/internal/format"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/hpcloud/golor"
+	git "github.com/libgit2/git2go/v30"
 	"github.com/spf13/cobra"
 )
-
-// logCmd represents the log command
-var logCmd = &cobra.Command{
-	Use:                   "log",
-	Short:                 "Shows the commit logs.",
-	DisableFlagsInUseLine: true,
-	SilenceUsage:          true,
-	Args:                  cobra.NoArgs,
-	RunE:                  runLog,
-}
 
 func init() {
 	RootCmd.AddCommand(logCmd)
@@ -58,8 +44,7 @@ func init() {
 	logCmd.Flags().StringP("from", "f", "HEAD", "Logs only commits reachable from this one")
 	logCmd.Flags().String("since", "", "Show commits more recent than a specific date")
 	logCmd.Flags().String("until", "", "Show commits older than a specific date")
-	logCmd.Flags().String("path", "", "Filter commits based on the path of files that are updated. Accept regexp")
-	logCmd.Flags().Int("hash-length", 7, "Commit hash length. Set a value <=0 to get the full length")
+	// logCmd.Flags().String("path", "", "Filter commits based on the path of files that are updated. Accept regexp")
 	// Filters
 	logCmd.Flags().StringArrayP("type", "t", []string{}, "Filter commits by type (repeatable option)")
 	commitCmd.RegisterFlagCompletionFunc("type", typeFlagCompletion)
@@ -67,165 +52,238 @@ func init() {
 	logCmd.Flags().BoolP("breaking-changes", "c", false, "Only shows breaking changes")
 }
 
-func runLog(cmd *cobra.Command, args []string) error {
-	ctx, err := context.FromCommand(cmd)
-	if err != nil {
-		return err
-	}
+type LogCmdOption struct {
+	All            bool
+	NoColor        bool
+	From           string
+	Since          *time.Time
+	Until          *time.Time
+	Types          []format.CommitType
+	Scopes         []string
+	BreakingChange bool
+	Repo           *git.Repository
+}
 
+// logCmd represents the log command
+var logCmd = &cobra.Command{
+	Use:                   "log",
+	Short:                 "Shows the commit logs.",
+	DisableFlagsInUseLine: true,
+	SilenceUsage:          true,
+	Args:                  cobra.NoArgs,
+	Run:                   runLogCmd,
+}
+
+func runLogCmd(cmd *cobra.Command, args []string) {
+	lco, err := parseLogCmd(cmd, args)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := runLog(lco); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func parseLogCmd(cmd *cobra.Command, args []string) (*LogCmdOption, error) {
 	// --all
 	fAll, err := cmd.Flags().GetBool("all")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// --no-color
 	fNoColor, err := cmd.Flags().GetBool("no-color")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// --from
 	fFrom, err := cmd.Flags().GetString("from")
 	if err != nil {
-		return err
-	}
-	// --hash-length
-	fHLength, err := cmd.Flags().GetInt("hash-length")
-	if err != nil {
-		return err
+		return nil, err
 	}
 	// --since
 	fSince, err := cmd.Flags().GetString("since")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	var since *time.Time
 	if fSince != "" {
-		*since, err = dateparse.ParseAny(fSince)
+		date, err := dateparse.ParseAny(fSince)
 		if err != nil {
-			return err
+			return nil, err
 		}
+		since = &date
 	}
 	// --until
 	fUntil, err := cmd.Flags().GetString("until")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	var until *time.Time
 	if fUntil != "" {
-		*until, err = dateparse.ParseAny(fUntil)
+		date, err := dateparse.ParseAny(fUntil)
 		if err != nil {
-			return err
+			return nil, err
 		}
+		until = &date
 	}
-	// --path
-	fPath, err := cmd.Flags().GetString("path")
-	if err != nil {
-		return err
-	}
-	var pathFilter func(string) bool
-	if fPath != "" {
-		pathReg, err := regexp.Compile(fPath)
-		if err != nil {
-			return err
-		}
-		pathFilter = func(p string) bool { return pathReg.MatchString(p) }
-	}
-	// Filters
-	filters := []FilterCommit{}
+	// --types
 	fTypes, err := cmd.Flags().GetStringArray("type")
 	if err != nil {
-		return err
+		return nil, err
+
 	}
-	if len(fTypes) > 0 {
-		types := make([]format.CommitType, len(fTypes))
-		for i, v := range fTypes {
-			types[i] = format.FindCommitType(v)
-		}
-		filters = append(filters, func(c *object.Commit, co *format.CommitMessageOption) bool {
-			for _, t := range types {
-				if co.Ctype == t {
-					return true
-				}
-			}
-			return false
-		})
+	types := make([]format.CommitType, len(fTypes))
+	for i, v := range fTypes {
+		types[i] = format.FindCommitType(v)
+		// TODO warn or error on nil commit type
 	}
+	// --scopes
 	fScopes, err := cmd.Flags().GetStringArray("scope")
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if len(fScopes) > 0 {
-		filters = append(filters, func(c *object.Commit, co *format.CommitMessageOption) bool {
-			for _, s := range fScopes {
-				if co.Scope == s {
-					return true
-				}
-			}
-			return false
-		})
-	}
+	// --breaking-changes
 	fBreakingChanges, err := cmd.Flags().GetBool("breaking-changes")
 	if err != nil {
-		return err
-	}
-	if fBreakingChanges {
-		filters = append(filters, func(c *object.Commit, co *format.CommitMessageOption) bool {
-			return co.BreakingChanges
-		})
+		return nil, err
 	}
 
-	from, err := ctx.Repo.ResolveRevision(plumbing.Revision(fFrom))
+	// Find repo
+	wd, err := os.Getwd()
 	if err != nil {
-		return fmt.Errorf("Error looking for commit %s: %s", fFrom, err)
+		return nil, err
 	}
-	cIter, err := ctx.Repo.Log(&git.LogOptions{Order: git.LogOrderCommitterTime, All: fAll, From: *from, Since: since, Until: until, PathFilter: pathFilter})
+	rpath, err := git.Discover(wd, false, nil)
+	if err != nil {
+		return nil, err
+	}
+	repo, err := git.OpenRepository(rpath)
+	if err != nil {
+		return nil, err
+	}
+
+	return &LogCmdOption{
+		All:            fAll,
+		NoColor:        fNoColor,
+		From:           fFrom,
+		Since:          since,
+		Until:          until,
+		Types:          types,
+		Scopes:         fScopes,
+		BreakingChange: fBreakingChanges,
+		Repo:           repo,
+	}, nil
+}
+
+func runLog(lco *LogCmdOption) error {
+	r := lco.Repo
+
+	walk, err := r.Walk()
 	if err != nil {
 		return err
 	}
+	if lco.All {
+		if err := walk.PushGlob("refs/*"); err != nil {
+			return err
+		}
+	} else {
+		from, err := r.RevparseSingle(lco.From)
+		if err != nil {
+			return err
+		}
+		if err := walk.Push(from.Id()); err != nil {
+			return err
+		}
+	}
+
+	// Build filters
+	filters := []LogFilter{}
+	if lco.Since != nil {
+		filters = append(filters, func(c *git.Commit, co *format.CommitMessageOption) (p, continueWalk bool) {
+			d := c.Committer().When
+			if d.Before(*lco.Since) {
+				return false, false
+			}
+			return true, true
+		})
+	}
+	if lco.Until != nil {
+		filters = append(filters, func(c *git.Commit, co *format.CommitMessageOption) (p, continueWalk bool) {
+			d := c.Committer().When
+			if d.After(*lco.Until) {
+				return false, true
+			}
+			return true, true
+		})
+	}
+	if lco.BreakingChange {
+		filters = append(filters, func(c *git.Commit, co *format.CommitMessageOption) (p, continueWalk bool) {
+			return co.BreakingChanges, true
+		})
+	}
+	if len(lco.Types) > 0 {
+		filters = append(filters, func(c *git.Commit, co *format.CommitMessageOption) (p, continueWalk bool) {
+			for _, t := range lco.Types {
+				if co.Ctype == t {
+					return true, true
+				}
+			}
+			return false, true
+		})
+	}
+	if len(lco.Scopes) > 0 {
+		filters = append(filters, func(c *git.Commit, co *format.CommitMessageOption) (p, continueWalk bool) {
+			for _, s := range lco.Scopes {
+				if co.Scope == s {
+					return true, true
+				}
+			}
+			return false, true
+		})
+	}
+	// Writer
 	w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, ' ', 0)
-	cIter.ForEach(func(c *object.Commit) error {
-		co := format.ParseCommitMsg(c.Message)
-		parsed := true
-		if co == nil {
-			parsed = false
-			sm := strings.SplitN(c.Message, "\n", 2)
-			co = &format.CommitMessageOption{
-				Description: sm[0],
-				Ctype:       format.NilCommit,
-			}
-			if len(sm) > 1 {
-				co.Body = strings.Join(sm[1:], "\n")
-			}
-		}
-		if applyFilters(c, co, filters...) {
-			fprettyprint(w, c, co, fHLength, !fNoColor, parsed)
-			fmt.Fprintln(w)
-		}
-		return nil
-	})
+
+	if err := walk.Iterate(buildLogWalker(w, !lco.NoColor, filters)); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-type FilterCommit func(*object.Commit, *format.CommitMessageOption) bool
+type LogFilter func(c *git.Commit, co *format.CommitMessageOption) (p, continueWalk bool)
 
-func applyFilters(c *object.Commit, co *format.CommitMessageOption, filters ...FilterCommit) bool {
-	keep := true
-	for _, f := range filters {
-		if !f(c, co) {
-			keep = false
-			break
+func buildLogWalker(w io.Writer, color bool, filters []LogFilter) func(c *git.Commit) bool {
+	return func(c *git.Commit) bool {
+		co := format.ParseCommitMsg(c.Message())
+		parsed := true
+		if co == nil {
+			parsed = false
+			co = &format.CommitMessageOption{}
 		}
+		p, continueWalk := true, true
+		for _, filter := range filters {
+			p, continueWalk = filter(c, co)
+			if !continueWalk {
+				return false
+			}
+			if !p {
+				break
+			}
+		}
+		if p {
+			fprettyprint(w, c, co, color, parsed)
+		}
+		return true
 	}
-	return keep
 }
 
-func fprettyprint(w io.Writer, c *object.Commit, co *format.CommitMessageOption, hLength int, color bool, parsed bool) {
+func fprettyprint(w io.Writer, c *git.Commit, co *format.CommitMessageOption, color bool, parsed bool) {
 	// Hash
-	h := c.Hash.String()
-	if hLength > len(h) || hLength <= 0 {
-		hLength = len(h)
+	h, err := c.ShortId()
+	if err != nil {
+		h = c.Id().String()
 	}
-	h = h[0:hLength] // Truncate
 	if color {
 		h = golor.Colorize(h, golor.W, -1)
 	}
@@ -234,7 +292,7 @@ func fprettyprint(w io.Writer, c *object.Commit, co *format.CommitMessageOption,
 	// Message
 	msg := co.Description
 	if color {
-		msg = golor.Colorize(msg, 215, -1)
+		msg = golor.Colorize(msg, 15, -1)
 	}
 	fmt.Fprintf(w, " %s", msg)
 
@@ -253,14 +311,14 @@ func fprettyprint(w io.Writer, c *object.Commit, co *format.CommitMessageOption,
 	fmt.Fprintln(w)
 
 	// Author
-	author := c.Author.String()
-	if color {
-		author = golor.Colorize(author, golor.AssignColor(author), -1)
-	}
-	fmt.Fprintf(w, "\tAuthor:\t%s\n", author)
+	author := c.Author()
+	fmt.Fprintf(w, "\tAuthor:\t%s <%s>\n", author.Name, author.Email)
+	// Committer
+	committer := c.Committer()
+	fmt.Fprintf(w, "\tCommitter:\t%s <%s>\n", committer.Name, committer.Email)
 
 	// Date
-	fmt.Fprintf(w, "\tDate:\t%s\n", c.Author.When.Format(object.DateFormat))
+	fmt.Fprintf(w, "\tDate:\t%s\n", committer.When.Format(time.UnixDate))
 
 	if parsed {
 		// Type
