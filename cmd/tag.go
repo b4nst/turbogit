@@ -22,17 +22,16 @@ THE SOFTWARE.
 package cmd
 
 import (
+	"errors"
 	"fmt"
-	"io"
-	"sort"
-	"strings"
+	"log"
+	"os"
+	"regexp"
+	"strconv"
 
-	"github.com/b4nst/turbogit/internal/context"
 	"github.com/b4nst/turbogit/internal/format"
 	"github.com/blang/semver/v4"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/storer"
+	git "github.com/libgit2/git2go/v30"
 	"github.com/spf13/cobra"
 )
 
@@ -46,6 +45,11 @@ func init() {
 	tagCmd.Flags().BoolP("dry-run", "d", false, "Do not tag.")
 }
 
+type TagCmdOption struct {
+	DryRun bool
+	Repo   *git.Repository
+}
+
 var tagCmd = &cobra.Command{
 	Use:                   "tag",
 	Short:                 "Create a tag",
@@ -55,174 +59,168 @@ var tagCmd = &cobra.Command{
 	Example: `
 # Given that the last release tag was v1.0.0, some feature were committed but no breaking changes.
 # The following command will create the tag v1.1.0
-$ tug tag	
+$ tug tag
 `,
-	RunE: tag,
+	Args:         cobra.NoArgs,
+	SilenceUsage: true,
+	Run:          runTagCmd,
 }
 
-func tag(cmd *cobra.Command, args []string) error {
-	ctx, err := context.FromCommand(cmd)
+func runTagCmd(cmd *cobra.Command, args []string) {
+	tco, err := parseTagCmd(cmd, args)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := runTag(tco); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func parseTagCmd(cmd *cobra.Command, args []string) (*TagCmdOption, error) {
+	// --dry-run
+	fDryRun, err := cmd.Flags().GetBool("dry-run")
+	if err != nil {
+		return nil, err
+	}
+
+	// Find repo
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	rpath, err := git.Discover(wd, false, nil)
+	if err != nil {
+		return nil, err
+	}
+	repo, err := git.OpenRepository(rpath)
+	if err != nil {
+		return nil, err
+	}
+
+	return &TagCmdOption{
+		DryRun: fDryRun,
+		Repo:   repo,
+	}, nil
+}
+
+func runTag(tco *TagCmdOption) error {
+	r := tco.Repo
+
+	bump := format.BUMP_NONE
+	var curr *semver.Version
+	dfo, err := git.DefaultDescribeFormatOptions()
 	if err != nil {
 		return err
 	}
-	// Get flags
-	dr, err := cmd.Flags().GetBool("dry-run")
+	dco := &git.DescribeOptions{
+		MaxCandidatesTags:     1,
+		Strategy:              git.DescribeTags,
+		Pattern:               fmt.Sprintf("%s*", TAG_PREFIX),
+		OnlyFollowFirstParent: true,
+	}
+
+	walk, err := r.Walk()
 	if err != nil {
+		return err
+	}
+	if err := walk.PushHead(); err != nil {
 		return err
 	}
 
-	curr, err := lastTag(ctx.Repo)
-	if err != nil {
-		return err
-	}
-	if curr == nil {
-		v, err := semver.Make("0.0.0")
+	walker := func(c *git.Commit) bool {
+		dr, err := c.Describe(dco)
 		if err != nil {
-			return err
+			// No next tag matching
+			bump = format.NextBump(c.Message(), bump)
+			return true
 		}
-		curr = &Tag{version: v, ref: &plumbing.Reference{}}
+		d, err := dr.Format(&dfo)
+		if err != nil {
+			panic(err)
+		}
+		var offset int
+		curr, offset, err = parseDescription(d)
+		if err != nil {
+			panic(err)
+		}
+		if offset <= 1 {
+			return false
+		}
+		bump = format.NextBump(c.Message(), bump)
+		return true
 	}
 
-	cmsgs, err := commitMsgsSince(ctx.Repo, curr.ref.Hash())
-	if err != nil {
+	if err := walk.Iterate(walker); err != nil {
 		return err
 	}
-	next, err := nextVersion(curr.version, cmsgs)
-	if err != nil {
-		return err
-	}
 
-	tag := TAG_PREFIX + next.String()
-	if dr {
-		fmt.Printf("%s would be created", next)
-	} else {
-		head, err := ctx.Repo.Head()
-		if err != nil {
-			return err
-		}
-		ref, err := ctx.Repo.CreateTag(tag, head.Hash(), nil)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("%s created", ref.Name())
-	}
-
-	return nil
-}
-
-type Tag struct {
-	version semver.Version
-	ref     *plumbing.Reference
-}
-type Tags []*Tag
-
-func (slice Tags) Len() int {
-	return len(slice)
-}
-
-func (slice Tags) Less(i, j int) bool {
-	ti, tj := slice[i], slice[j]
-	if ti == nil || tj == nil {
-		return false
-	}
-	return ti.version.LT(tj.version)
-}
-
-func (slice Tags) Swap(i, j int) {
-	slice[i], slice[j] = slice[j], slice[i]
-}
-
-func filterSemver(it storer.ReferenceIter) (Tags, error) {
-	tags := Tags{}
-
-	filter := func(ref *plumbing.Reference) error {
-		v, err := semver.Make(strings.TrimLeft(ref.Name().Short(), TAG_PREFIX))
-		if err == nil {
-			tags = append(tags, &Tag{version: v, ref: ref})
-		}
+	if bump == format.BUMP_NONE {
+		fmt.Println("Nothing to do")
 		return nil
 	}
 
-	if err := it.ForEach(filter); err != nil {
-		return nil, err
+	if curr == nil {
+		curr = &semver.Version{}
+	}
+	if err := bumpVersion(curr, bump); err != nil {
+		return err
 	}
 
-	return tags, nil
+	tagname := fmt.Sprintf("refs/tags/%s%s", TAG_PREFIX, curr)
+	if tco.DryRun {
+		fmt.Println(tagname, "will be created")
+		return nil
+	}
+
+	head, err := r.Head()
+	if err != nil {
+		return err
+	}
+	tag, err := r.References.Create(tagname, head.Target(), false, "")
+	if err != nil {
+		return err
+	}
+	fmt.Println(tag.Target(), "-->", tagname)
+	return nil
 }
 
-// Return the last Semver tag or nil if there are none
-func lastTag(r *git.Repository) (*Tag, error) {
-	iter, err := r.Tags()
-	if err != nil {
-		return nil, err
+func bumpVersion(curr *semver.Version, bump format.Bump) error {
+	if curr == nil {
+		return errors.New("Received nil pointer")
 	}
-
-	tags, err := filterSemver(iter)
-	if err != nil {
-		return nil, err
-	}
-	sort.Sort(sort.Reverse(tags))
-
-	if len(tags) <= 0 {
-		return nil, nil
-	}
-	return tags[0], nil
-}
-
-func nextVersion(curr semver.Version, msgs []string) (semver.Version, error) {
-	const (
-		Major int = iota
-		Minor
-		Patch
-		Nil
-	)
-	next := Nil
-
-	for _, msg := range msgs {
-		cmo := format.ParseCommitMsg(msg)
-		if cmo == nil {
-			continue // Ignore malformatted commits
+	switch bump {
+	case format.BUMP_MAJOR:
+		if curr.Major == 0 {
+			return curr.IncrementMinor()
 		}
-
-		if cmo.BreakingChanges {
-			next = Major
-			break
-		} else if cmo.Ctype == format.FeatureCommit {
-			next = Minor
-		} else if cmo.Ctype == format.FixCommit && next == Nil {
-			next = Patch
-		}
-	}
-
-	switch next {
-	case Major:
-		err := curr.IncrementMajor()
-		return curr, err
-	case Minor:
-		err := curr.IncrementMinor()
-		return curr, err
-	case Patch:
-		err := curr.IncrementPatch()
-		return curr, err
+		return curr.IncrementMajor()
+	case format.BUMP_MINOR:
+		return curr.IncrementMinor()
+	case format.BUMP_PATCH:
+		return curr.IncrementPatch()
 	default:
-		return curr, nil
+		return nil
 	}
 }
 
-func commitMsgsSince(r *git.Repository, start plumbing.Hash) ([]string, error) {
-	citer, err := r.Log(&git.LogOptions{Order: git.LogOrderCommitterTime})
+func parseDescription(d string) (*semver.Version, int, error) {
+	re, err := regexp.Compile(`-(\d+)-[a-z0-9]{8}$`)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	defer citer.Close()
+	offset := 1
 
-	msgs := []string{}
-	for c, err := citer.Next(); err == nil && c.Hash != start; c, err = citer.Next() {
-		msgs = append(msgs, c.Message)
-	}
-	if err != nil && err != io.EOF {
-		return nil, err
+	if res := re.FindStringSubmatch(d); res != nil {
+		offset, err = strconv.Atoi(res[1])
+		if err != nil {
+			return nil, 0, err
+		}
+		offset++
+		d = d[:len(d)-len(res[0])]
 	}
 
-	return msgs, err
+	if v, err := semver.ParseTolerant(d); err == nil {
+		return &v, offset, nil
+	}
+	return nil, offset, nil
 }

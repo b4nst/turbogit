@@ -117,3 +117,39 @@ func TestParseCommitMsg(t *testing.T) {
 		})
 	}
 }
+
+func TestNextBump(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name string
+		cmsg string
+		curr Bump
+		next Bump
+	}{
+		{"Test next bump 1", "feat: a feature", BUMP_NONE, BUMP_MINOR},
+		{"Test next bump 2", "feat: a feature", BUMP_PATCH, BUMP_MINOR},
+		{"Test next bump 3", "feat: a feature", BUMP_MINOR, BUMP_MINOR},
+		{"Test next bump 3", "feat: a feature", BUMP_MAJOR, BUMP_MAJOR},
+		{"Test next bump 4", "fix: a fix", BUMP_NONE, BUMP_PATCH},
+		{"Test next bump 5", "fix: a fix", BUMP_PATCH, BUMP_PATCH},
+		{"Test next bump 6", "fix: a fix", BUMP_MINOR, BUMP_MINOR},
+		{"Test next bump 7", "fix: a fix", BUMP_MAJOR, BUMP_MAJOR},
+		{"Test next bump 8", "baadbeef", BUMP_NONE, BUMP_NONE},
+		{"Test next bump 9", "baadbeef", BUMP_PATCH, BUMP_PATCH},
+		{"Test next bump 10", "baadbeef", BUMP_MINOR, BUMP_MINOR},
+		{"Test next bump 11", "baadbeef", BUMP_MAJOR, BUMP_MAJOR},
+		{"Test next bump 12", "chore!: breaking", BUMP_NONE, BUMP_MAJOR},
+		{"Test next bump 13", "chore!: breaking", BUMP_PATCH, BUMP_MAJOR},
+		{"Test next bump 14", "chore!: breaking", BUMP_MINOR, BUMP_MAJOR},
+		{"Test next bump 15", "chore!: breaking", BUMP_MAJOR, BUMP_MAJOR},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			actual := NextBump(tt.cmsg, tt.curr)
+			assert.Equal(t, tt.next, actual)
+		})
+	}
+}

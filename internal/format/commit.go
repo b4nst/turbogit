@@ -183,3 +183,34 @@ func ParseCommitMsg(msg string) *CommitMessageOption {
 
 	return cmo
 }
+
+type Bump int
+
+const (
+	BUMP_NONE Bump = iota
+	BUMP_PATCH
+	BUMP_MINOR
+	BUMP_MAJOR
+)
+
+// Get the next bump that this commit message would generate
+func NextBump(cmsg string, curr Bump) Bump {
+	if curr == BUMP_MAJOR {
+		return curr
+	}
+	co := ParseCommitMsg(cmsg)
+	if co == nil {
+		return curr
+	}
+	if co.BreakingChanges {
+		return BUMP_MAJOR
+	}
+	if co.Ctype == FeatureCommit {
+		return BUMP_MINOR
+	}
+	if curr < BUMP_PATCH && co.Ctype == FixCommit {
+		return BUMP_PATCH
+	}
+
+	return curr
+}
