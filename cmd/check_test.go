@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/b4nst/turbogit/internal/test"
-	"github.com/libgit2/git2go/v30"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/b4nst/turbogit/internal/test"
+	git "github.com/libgit2/git2go/v30"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRunCheck(t *testing.T) {
@@ -19,6 +20,10 @@ func TestRunCheck(t *testing.T) {
 
 	r, err := git.InitRepository(dir, false)
 	require.NoError(t, err)
+	config, err := r.Config()
+	require.NoError(t, err)
+	require.NoError(t, config.SetString("user.name", "alice"))
+	require.NoError(t, config.SetString("user.email", "alice@ecorp.com"))
 
 	c1, err := writeCommit(r, "bad commit 1")
 	require.NoError(t, err)
