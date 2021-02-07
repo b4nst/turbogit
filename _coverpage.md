@@ -1,6 +1,6 @@
 ![logo](_media/icon.png)
 
-# turbogit <small>1.1.1</small>
+# turbogit <small>2.0.0</small>
 
 > Keep your git workflow clean without headache.
 
