@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/b4nst/turbogit/internal/format"
-	"github.com/libgit2/git2go/v30"
+	git "github.com/libgit2/git2go/v30"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,7 +15,7 @@ import (
 
 func TestBranchCreate(t *testing.T) {
 	// Init git repository in tmp dir
-	dir, err := ioutil.TempDir("", "turbogit-test-commit")
+	dir, err := ioutil.TempDir("", "turbogit-test-branch")
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 	require.NoError(t, os.Chdir(dir))
@@ -23,8 +23,7 @@ func TestBranchCreate(t *testing.T) {
 	require.NoError(t, err)
 
 	bco := &BranchCmdOption{
-		format.FeatureBranch,
-		"feat/foo",
+		format.TugBranch{Type: "feat", Description: "foo"},
 		r,
 	}
 	// Sanity test
@@ -35,7 +34,11 @@ func TestBranchCreate(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, config.SetString("user.name", "alice"))
 	require.NoError(t, config.SetString("user.email", "alice@ecorp.com"))
-	sig := &git.Signature{"alice@ecorp.com", "alice", time.Now()}
+	sig := &git.Signature{
+		Email: "alice@ecorp.com",
+		Name:  "alice",
+		When:  time.Now(),
+	}
 	idx, err := r.Index()
 	require.NoError(t, err)
 	treeId, err := idx.WriteTree()
@@ -48,11 +51,11 @@ func TestBranchCreate(t *testing.T) {
 	assert.NoError(t, err)
 	h, err := r.Head()
 	require.NoError(t, err)
-	assert.Equal(t, "refs/heads/"+bco.Name, h.Name())
+	assert.Equal(t, "refs/heads/feat/foo", h.Name())
 }
 
 func TestParseBranchCmd(t *testing.T) {
-	dir, err := ioutil.TempDir("", "turbogit-test-commit")
+	dir, err := ioutil.TempDir("", "turbogit-test-branch")
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
 	require.NoError(t, os.Chdir(dir))
@@ -65,28 +68,20 @@ func TestParseBranchCmd(t *testing.T) {
 
 	cmd := &cobra.Command{}
 
-	// Incorrect type
-	_, err = parseBranchCmd(cmd, []string{"nope"})
-	assert.Error(t, err, "Nope")
-	// Not user no description
-	_, err = parseBranchCmd(cmd, []string{"feat"})
-	assert.Error(t, err, "feat branches need a description.")
 	// User branch
-	bco, err := parseBranchCmd(cmd, []string{"user"})
+	bco, err := parseBranchCmd(cmd, []string{"user", "my", "branch"})
 	assert.NoError(t, err)
 	expected := BranchCmdOption{
-		BType: format.UserBranch,
-		Name:  "user/alice",
-		Repo:  r,
+		NewBranch: format.TugBranch{Type: "user", Prefix: "alice", Description: "my branch"},
+		Repo:      r,
 	}
 	assert.Equal(t, expected, *bco)
 	// Classic branch
-	bco, err = parseBranchCmd(cmd, []string{"feat", "Foo", "bAr"})
+	bco, err = parseBranchCmd(cmd, []string{"feat", "foo", "bar"})
 	assert.NoError(t, err)
 	expected = BranchCmdOption{
-		BType: format.FeatureBranch,
-		Name:  "feat/foo-bar",
-		Repo:  r,
+		NewBranch: format.TugBranch{Type: "feat", Description: "foo bar"},
+		Repo:      r,
 	}
 	assert.Equal(t, expected, *bco)
 }

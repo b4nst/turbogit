@@ -1,66 +1,81 @@
 package format
 
 import (
-	"fmt"
+	"errors"
+	"path"
 	"regexp"
 	"strings"
+	"unicode"
 )
-
-type BranchType int
-
-const (
-	FeatureBranch BranchType = iota
-	FixBranch
-	UserBranch
-)
-
-func (b BranchType) String() string {
-	return [...]string{"feat", "fix", "user"}[b]
-}
-
-func AllBranchType() []string {
-	return []string{
-		FeatureBranch.String(),
-		FixBranch.String(),
-		UserBranch.String(),
-	}
-}
-
-func BranchTypeFrom(str string) (BranchType, error) {
-	switch str {
-	case FeatureBranch.String():
-		return FeatureBranch, nil
-	case FixBranch.String():
-		return FixBranch, nil
-	case UserBranch.String():
-		return UserBranch, nil
-	default:
-		return -1, fmt.Errorf("%s is not a branch type, allowed values are f,p and u", str)
-	}
-}
 
 var (
 	forbiddenChar = regexp.MustCompile(`(?m)[\?\*~^:\\]|@{|\.{2}`)
 	blank         = regexp.MustCompile(`\s+`)
 	void          = []byte("")
 	sep           = []byte("-")
+
+	// A default type rewrite map
+	DefaultTypeRewrite = map[string]string{
+		"feature": "feat",
+		"bug":     "fix",
+		"task":    "feat",
+		"story":   "feat",
+	}
 )
+
+// TugBranch represents a turbogit branch
+type TugBranch struct {
+	// Branch type (e.g. 'feat', 'fix', 'user', etc...)
+	Type string
+	// Branch prefix (issue id, user name, etc...)
+	Prefix string
+	// Branch description
+	Description string
+}
+
+// String builds a git-sanitized branch name.
+func (tb TugBranch) String() string {
+	raw := path.Join(tb.Type, tb.Prefix, strings.ToLower(tb.Description))
+	return sanitizeBranch(raw)
+}
+
+// ParseBranch parses a given string into a TugBranch or return an error on bad format.
+func ParseBranch(s string) (TugBranch, error) {
+	split := strings.SplitN(s, "/", 3)
+	if len(split) < 2 {
+		return TugBranch{}, errors.New("Bad branch format")
+	}
+	tb := TugBranch{}
+	tb.Type = split[0]
+
+	if len(split) < 3 {
+		tb.Description = split[1]
+	} else {
+		tb.Prefix = split[1]
+		tb.Description = split[2]
+	}
+	// Desanitize description
+	desc := []rune(strings.ReplaceAll(tb.Description, "-", " "))
+	desc[0] = unicode.ToUpper(desc[0])
+	tb.Description = string(desc)
+
+	return tb, nil
+}
+
+// WithType returns a TugBranch with the given type 't' or it's correlation in the rewrite map if it exists.
+func (tb TugBranch) WithType(t string, rewrite map[string]string) TugBranch {
+	ts := strings.ToLower(t)
+	if tr, ok := rewrite[ts]; ok {
+		tb.Type = tr
+	} else {
+		tb.Type = ts
+	}
+
+	return tb
+}
 
 func sanitizeBranch(s string) string {
 	sb := forbiddenChar.ReplaceAll([]byte(s), void)
 	s = string(blank.ReplaceAll(sb, sep))
-	s = strings.Trim(s, "/")
-	return strings.ToLower(s)
-}
-
-func BranchName(btype BranchType, description string, username string) string {
-	branch := btype.String()
-	if btype == UserBranch {
-		branch += "/" + username
-	}
-	if description != "" {
-		branch += "/" + description
-	}
-
-	return sanitizeBranch(branch)
+	return strings.Trim(s, "./")
 }
