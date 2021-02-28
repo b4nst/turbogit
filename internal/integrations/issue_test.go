@@ -1,6 +1,7 @@
 package integrations
 
 import (
+	"os"
 	"testing"
 
 	"github.com/b4nst/turbogit/internal/format"
@@ -23,26 +24,21 @@ func TestShortFormat(t *testing.T) {
 }
 
 func TestSelectIssue(t *testing.T) {
+	if os.Getenv("CI") == "true" {
+		t.Skip("Skipping in CI due to termbox unstable behaviour.")
+	}
 	ids := []IssueDescription{
 		{"ID-001", "Issue 1", "description", "Jira", "type"},
 		{"ID-002", "Issue 2", "description", "Jira", "type"},
 		{"ID-003", "Issue 3", "description", "Jira", "type"},
 	}
 
-	keys := func(str string) []termbox.Event {
-		s := []rune(str)
-		e := make([]termbox.Event, 0, len(s))
-		for _, r := range s {
-			e = append(e, termbox.Event{Type: termbox.EventKey, Ch: r})
-		}
-		return e
-	}
-
 	term := fuzzyfinder.UseMockedTerminal()
 	term.SetSize(60, 10)
-	term.SetEvents(append(
-		keys("issue 2"),
-		termbox.Event{Type: termbox.EventKey, Key: termbox.KeyEnter})...)
+	term.SetEvents(
+		termbox.Event{Type: termbox.EventKey, Ch: '2'},
+		termbox.Event{Type: termbox.EventKey, Key: termbox.KeyEnter},
+		termbox.Event{Type: termbox.EventKey, Key: termbox.KeyEsc})
 
 	id, err := SelectIssue(ids, false)
 	assert.NoError(t, err)
