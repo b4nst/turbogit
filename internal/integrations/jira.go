@@ -1,7 +1,6 @@
 package integrations
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/andygrunwald/go-jira"
@@ -36,7 +35,7 @@ func (jp JiraProvider) Search() ([]IssueDescription, error) {
 	res := make([]IssueDescription, len(raw))
 	for i, r := range raw {
 		res[i] = IssueDescription{
-			ID:          fmt.Sprintf("%s-%s", r.Fields.Project.Key, r.ID),
+			ID:          r.Key,
 			Name:        r.Fields.Summary,
 			Description: r.Fields.Description,
 			Type:        r.Fields.Type.Name,
