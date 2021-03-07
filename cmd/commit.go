@@ -24,7 +24,6 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"os"
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -156,15 +155,7 @@ func parseCommitCmd(cmd *cobra.Command, args []string) (*CommitCmdOption, error)
 	}
 
 	// Find repo
-	wd, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-	rpath, err := git.Discover(wd, false, nil)
-	if err != nil {
-		return nil, err
-	}
-	repo, err := git.OpenRepository(rpath)
+	repo, err := tugit.Getrepo()
 	if err != nil {
 		return nil, err
 	}

@@ -31,6 +31,7 @@ import (
 
 	"github.com/araddon/dateparse"
 	"github.com/b4nst/turbogit/internal/format"
+	tugit "github.com/b4nst/turbogit/internal/git"
 	"github.com/hpcloud/golor"
 	git "github.com/libgit2/git2go/v30"
 	"github.com/spf13/cobra"
@@ -149,15 +150,7 @@ func parseLogCmd(cmd *cobra.Command, args []string) (*LogCmdOption, error) {
 	}
 
 	// Find repo
-	wd, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-	rpath, err := git.Discover(wd, false, nil)
-	if err != nil {
-		return nil, err
-	}
-	repo, err := git.OpenRepository(rpath)
+	repo, err := tugit.Getrepo()
 	if err != nil {
 		return nil, err
 	}

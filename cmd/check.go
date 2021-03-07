@@ -28,7 +28,8 @@ import (
 	"os"
 
 	"github.com/b4nst/turbogit/internal/format"
-	"github.com/libgit2/git2go/v30"
+	tugit "github.com/b4nst/turbogit/internal/git"
+	git "github.com/libgit2/git2go/v30"
 	"github.com/spf13/cobra"
 )
 
@@ -82,15 +83,7 @@ func parseCheckCmd(cmd *cobra.Command, args []string) (*CheckCmdOption, error) {
 	}
 
 	// Find repo
-	wd, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-	rpath, err := git.Discover(wd, false, nil)
-	if err != nil {
-		return nil, err
-	}
-	repo, err := git.OpenRepository(rpath)
+	repo, err := tugit.Getrepo()
 	if err != nil {
 		return nil, err
 	}

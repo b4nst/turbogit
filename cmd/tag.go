@@ -25,11 +25,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"regexp"
 	"strconv"
 
 	"github.com/b4nst/turbogit/internal/format"
+	tugit "github.com/b4nst/turbogit/internal/git"
 	"github.com/blang/semver/v4"
 	git "github.com/libgit2/git2go/v30"
 	"github.com/spf13/cobra"
@@ -84,15 +84,7 @@ func parseTagCmd(cmd *cobra.Command, args []string) (*TagCmdOption, error) {
 	}
 
 	// Find repo
-	wd, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-	rpath, err := git.Discover(wd, false, nil)
-	if err != nil {
-		return nil, err
-	}
-	repo, err := git.OpenRepository(rpath)
+	repo, err := tugit.Getrepo()
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +118,7 @@ func runTag(tco *TagCmdOption) error {
 	if err := walk.PushHead(); err != nil {
 		return err
 	}
-
+	// Walker function, find current tag and next bump
 	walker := func(c *git.Commit) bool {
 		dr, err := c.Describe(dco)
 		if err != nil {
@@ -149,7 +141,6 @@ func runTag(tco *TagCmdOption) error {
 		bump = format.NextBump(c.Message(), bump)
 		return true
 	}
-
 	if err := walk.Iterate(walker); err != nil {
 		return err
 	}
@@ -158,29 +149,31 @@ func runTag(tco *TagCmdOption) error {
 		fmt.Println("Nothing to do")
 		return nil
 	}
-
+	// If no current semver tag, init to 0.0.0
 	if curr == nil {
 		curr = &semver.Version{}
 	}
+	// Bump tag
 	if err := bumpVersion(curr, bump); err != nil {
 		return err
 	}
 
 	tagname := fmt.Sprintf("refs/tags/%s%s", TAG_PREFIX, curr)
 	if tco.DryRun {
+		// Dry run
 		fmt.Println(tagname, "will be created")
-		return nil
+	} else {
+		// Tag
+		head, err := r.Head()
+		if err != nil {
+			return err
+		}
+		tag, err := r.References.Create(tagname, head.Target(), false, "")
+		if err != nil {
+			return err
+		}
+		fmt.Println(tag.Target(), "-->", tagname)
 	}
-
-	head, err := r.Head()
-	if err != nil {
-		return err
-	}
-	tag, err := r.References.Create(tagname, head.Target(), false, "")
-	if err != nil {
-		return err
-	}
-	fmt.Println(tag.Target(), "-->", tagname)
 	return nil
 }
 
