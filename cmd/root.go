@@ -37,14 +37,12 @@ var (
 	Version   = "dev"
 	Commit    = "nil"
 	BuildDate = "nil"
+
+	RootCmd = &cobra.Command{
+		Use:   BIN_NAME,
+		Short: "Improve your git workflow.",
+	}
 )
-
-var cfgFile string
-
-var RootCmd = &cobra.Command{
-	Use:   BIN_NAME,
-	Short: "Improve your git workflow.",
-}
 
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {

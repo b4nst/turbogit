@@ -24,10 +24,10 @@ package cmd
 import (
 	"errors"
 	"log"
-	"os"
 	"strings"
 
 	"github.com/b4nst/turbogit/internal/format"
+	tugit "github.com/b4nst/turbogit/internal/git"
 	"github.com/b4nst/turbogit/internal/integrations"
 
 	git "github.com/libgit2/git2go/v30"
@@ -86,15 +86,7 @@ func runBranchCmd(cmd *cobra.Command, args []string) {
 
 func parseBranchCmd(cmd *cobra.Command, args []string) (*BranchCmdOption, error) {
 	// Find repo
-	wd, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
-	rpath, err := git.Discover(wd, false, nil)
-	if err != nil {
-		return nil, err
-	}
-	repo, err := git.OpenRepository(rpath)
+	repo, err := tugit.Getrepo()
 	if err != nil {
 		return nil, err
 	}
