@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	tugit "github.com/b4nst/turbogit/internal/git"
 	"github.com/b4nst/turbogit/internal/test"
 	git "github.com/libgit2/git2go/v30"
 	"github.com/stretchr/testify/assert"
@@ -25,13 +26,13 @@ func TestRunCheck(t *testing.T) {
 	require.NoError(t, config.SetString("user.name", "alice"))
 	require.NoError(t, config.SetString("user.email", "alice@ecorp.com"))
 
-	c1, err := writeCommit(r, "bad commit 1")
+	c1, err := tugit.Commit(r, "bad commit 1")
 	require.NoError(t, err)
 	sid1, err := c1.ShortId()
 	require.NoError(t, err)
-	_, err = writeCommit(r, "feat: ok commit")
+	_, err = tugit.Commit(r, "feat: ok commit")
 	assert.NoError(t, err)
-	c3, err := writeCommit(r, "bad commit 2")
+	c3, err := tugit.Commit(r, "bad commit 2")
 	assert.NoError(t, err)
 	sid3, err := c3.ShortId()
 	require.NoError(t, err)
