@@ -1,6 +1,7 @@
 package format
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -32,6 +33,59 @@ func TestCommitMessage(t *testing.T) {
 	for name, tc := range tcs {
 		t.Run(name, func(t *testing.T) {
 			assert.Equal(t, tc.expected, CommitMessage(tc.o))
+		})
+	}
+}
+
+func TestCMOCheck(t *testing.T) {
+	tcs := map[string]struct {
+		cmo *CommitMessageOption
+		err error
+	}{
+		"No type": {
+			cmo: &CommitMessageOption{},
+			err: errors.New("A commit type is required"),
+		},
+		"No description": {
+			cmo: &CommitMessageOption{Ctype: FeatureCommit},
+			err: errors.New("A commit description is required"),
+		},
+		"Ok": {
+			cmo: &CommitMessageOption{Ctype: FeatureCommit, Description: "foo"},
+			err: nil,
+		},
+	}
+
+	for name, tc := range tcs {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, tc.err, tc.cmo.Check())
+		})
+	}
+}
+
+func TestCMOOverwrite(t *testing.T) {
+	tcs := map[string]struct {
+		src      *CommitMessageOption
+		override *CommitMessageOption
+		expected *CommitMessageOption
+	}{
+		"Override type": {
+			src:      &CommitMessageOption{Ctype: FeatureCommit, Description: "foo"},
+			override: &CommitMessageOption{Ctype: FixCommit},
+			expected: &CommitMessageOption{Ctype: FixCommit, Description: "foo"},
+		},
+		"Override everything": {
+			src:      &CommitMessageOption{Ctype: FeatureCommit, Description: "foo", Scope: "foo", Body: "foo", Footers: []string{"foo", "foo"}, BreakingChanges: true},
+			override: &CommitMessageOption{Ctype: FixCommit, Description: "bar", Scope: "bar", Body: "bar", Footers: []string{"bar", "bar"}, BreakingChanges: false},
+			expected: &CommitMessageOption{Ctype: FixCommit, Description: "bar", Scope: "bar", Body: "bar", Footers: []string{"bar", "bar"}, BreakingChanges: true},
+		},
+	}
+
+	for name, tc := range tcs {
+		t.Run(name, func(t *testing.T) {
+			err := tc.src.Overwrite(tc.override)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expected, tc.src)
 		})
 	}
 }

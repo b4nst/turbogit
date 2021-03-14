@@ -1,24 +1,26 @@
 package format
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/b4nst/turbogit/internal/constants"
 	"github.com/hpcloud/golor"
+	"github.com/imdario/mergo"
 )
 
 type CommitType int
 
 const (
-	BuildCommit CommitType = iota
+	NilCommit CommitType = iota
+	BuildCommit
 	CiCommit
 	ChoreCommit
 	DocCommit
 	FeatureCommit
 	FixCommit
-	NilCommit
 	PerfCommit
 	RefactorCommit
 	StyleCommit
@@ -26,7 +28,7 @@ const (
 )
 
 func (b CommitType) String() string {
-	return [...]string{"build", "ci", "chore", "docs", "feat", "fix", "", "perf", "refactor", "style", "test"}[b]
+	return [...]string{"", "build", "ci", "chore", "docs", "feat", "fix", "perf", "refactor", "style", "test"}[b]
 }
 
 func ColorizeCommitType(s string, ct CommitType) string {
@@ -89,6 +91,24 @@ type CommitMessageOption struct {
 	Footers []string
 	// Breaking change flag (optional)
 	BreakingChanges bool
+}
+
+// Overwrite values with another CommitMessageOption.
+func (cmo *CommitMessageOption) Overwrite(other *CommitMessageOption) error {
+	return mergo.Merge(cmo, other, mergo.WithOverride)
+}
+
+// Check CommitMessageOption compliance
+func (cmo *CommitMessageOption) Check() error {
+	if cmo.Ctype == NilCommit {
+		return errors.New("A commit type is required")
+	}
+
+	if cmo.Description == "" {
+		return errors.New("A commit description is required")
+	}
+
+	return nil
 }
 
 // Format commit message according to https://www.conventionalcommits.org/en/v1.0.0/
