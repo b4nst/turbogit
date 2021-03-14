@@ -22,16 +22,14 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/b4nst/turbogit/internal/format"
-	intgit "github.com/b4nst/turbogit/internal/git"
+	tugit "github.com/b4nst/turbogit/internal/git"
 	git "github.com/libgit2/git2go/v30"
 	"github.com/spf13/cobra"
 )
@@ -44,6 +42,7 @@ func init() {
 	commitCmd.Flags().BoolP("breaking-changes", "c", false, "Commit contains breaking changes")
 	commitCmd.Flags().BoolP("edit", "e", false, "Prompt editor to edit your message (add body or/and footer(s))")
 	commitCmd.Flags().StringP("scope", "s", "", "Add a scope")
+	commitCmd.Flags().BoolP("amend", "a", false, "Amend commit")
 }
 
 func typeFlagCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -61,6 +60,8 @@ type CommitCmdOption struct {
 	Scope string
 	// Commit message
 	Message string
+	// Amend
+	Amend bool
 	// Current repository
 	Repo *git.Repository
 }
@@ -68,6 +69,7 @@ type CommitCmdOption struct {
 // commitCmd represents the commit command
 var commitCmd = &cobra.Command{
 	Use:                   "commit [type] [subject]",
+	Aliases:               []string{"c"},
 	Short:                 "Commit staging area",
 	DisableFlagsInUseLine: true,
 	Example: `
@@ -83,7 +85,21 @@ $ tug commit refactor a scopped refactor -s scope
 # Open your editor to edit the commit message
 $ tug commit ci -e message
 	`,
-	Args:         cobra.MinimumNArgs(1),
+	Args: func(cmd *cobra.Command, args []string) error {
+		amend, _ := cmd.Flags().GetBool("amend")
+		fType, _ := cmd.Flags().GetString("type")
+		ma := 0
+		if !amend {
+			ma++ // Need at least one argument for the description
+			if fType == "" {
+				ma++ // Also need a type since it was not passed as flag
+			}
+		}
+		if len(args) < ma {
+			return fmt.Errorf("requires at least %d arg(s), only received %d", ma, len(args))
+		}
+		return nil
+	},
 	SilenceUsage: true,
 	ValidArgs:    format.AllCommitType(),
 	Run:          runCommitCmd,
@@ -106,11 +122,14 @@ func parseCommitCmd(cmd *cobra.Command, args []string) (*CommitCmdOption, error)
 	if err != nil {
 		return nil, err
 	}
-	if fType == "" {
-		fType = args[0]
-		args = args[1:]
-	}
 	ctype := format.FindCommitType(fType)
+	if ctype == format.NilCommit && len(args) > 0 {
+		ctype = format.FindCommitType(args[0])
+		if ctype != format.NilCommit {
+			// Type was in first arg
+			args = args[1:]
+		}
+	}
 
 	// --breaking-changes
 	fBreakingChanges, err := cmd.Flags().GetBool("breaking-changes")
@@ -126,6 +145,12 @@ func parseCommitCmd(cmd *cobra.Command, args []string) (*CommitCmdOption, error)
 
 	// --edit
 	fEdit, err := cmd.Flags().GetBool("edit")
+	if err != nil {
+		return nil, err
+	}
+
+	// --amend
+	fAmend, err := cmd.Flags().GetBool("amend")
 	if err != nil {
 		return nil, err
 	}
@@ -150,149 +175,103 @@ func parseCommitCmd(cmd *cobra.Command, args []string) (*CommitCmdOption, error)
 		Message:         strings.Join(args, " "),
 		PromptEditor:    fEdit,
 		Scope:           fScope,
+		Amend:           fAmend,
 		Repo:            repo,
 	}, nil
 }
 
 func runCommit(cco *CommitCmdOption) error {
+	var ca *git.Commit
+	if cco.Amend {
+		o, err := cco.Repo.RevparseSingle("HEAD")
+		if err != nil {
+			return err
+		}
+		ca, err = o.AsCommit()
+		if err != nil {
+			return err
+		}
+	}
+
 	// Check if working tree is clean
-	nc, err := needCommit(cco.Repo)
-	if err != nil {
-		return err
-	}
-	if !nc {
-		fmt.Println("Nothing to commit, working tree clean")
-		return nil
-	}
-
-	err = intgit.PreCommitHook(cco.Repo.Path())
-	if err != nil {
-		return fmt.Errorf("Error during pre-commit hook: %s", err.Error())
+	if ca == nil { // Only when not amending
+		nc, err := tugit.StageReady(cco.Repo)
+		if err != nil {
+			return err
+		}
+		if !nc {
+			fmt.Println("Nothing to commit, working tree clean")
+			return nil
+		}
 	}
 
-	msg, err := intgit.PrepareCommitMsgHook(cco.Repo.Path())
-	if err != nil {
-		return fmt.Errorf("Error during prepare-commit-msg hook: %s", err.Error())
+	msg := ""
+	if ca != nil {
+		// Init message from amend origin
+		msg = ca.Message()
+	} else {
+		// Init message from hooks
+		if err := tugit.PreCommitHook(cco.Repo.Path()); err != nil {
+			return fmt.Errorf("Error during pre-commit hook: %s", err.Error())
+		}
+		m, err := tugit.PrepareCommitMsgHook(cco.Repo.Path())
+		if err != nil {
+			return fmt.Errorf("Error during prepare-commit-msg hook: %s", err.Error())
+		}
+		msg = m
 	}
-	if msg == "" {
-		msg = cco.Message
-	}
+	// Try to parse the initial message
 	cmo := format.ParseCommitMsg(msg)
 	if cmo == nil {
-		// Parse commit type
-		ctype := cco.CType
-		if ctype == format.NilCommit {
-			return errors.New("A commit type is required")
-		}
-		cmo = &format.CommitMessageOption{
-			Ctype: ctype, BreakingChanges: cco.BreakingChanges, Description: msg, Scope: cco.Scope,
-		}
+		// If not formatted put raw message as Description
+		cmo = &format.CommitMessageOption{Description: msg}
+	}
+	if err := cmo.Overwrite(&format.CommitMessageOption{
+		Ctype:           cco.CType,
+		BreakingChanges: cco.BreakingChanges,
+		Description:     cco.Message,
+		Scope:           cco.Scope,
+	}); err != nil {
+		return err
+	}
+	if err := cmo.Check(); err != nil {
+		return err
 	}
 
+	// Build commit message
 	cmsg := format.CommitMessage(cmo)
 	if cco.PromptEditor {
 		cmsg = promptEditor(cmsg)
 	}
-	cmsg, err = intgit.CommitMsgHook(cco.Repo.Path(), cmsg)
+	var err error
+	cmsg, err = tugit.CommitMsgHook(cco.Repo.Path(), cmsg)
 	if err != nil {
 		return fmt.Errorf("Error during commit-msg hook: %s", err.Error())
 	}
 
-	// // Write commit
-	commit, err := writeCommit(cco.Repo, cmsg)
+	// Write commit
+	var commit *git.Commit
+	if ca != nil {
+		commit, err = tugit.Amend(ca, cmsg)
+	} else {
+		commit, err = tugit.Commit(cco.Repo, cmsg)
+	}
 	if err != nil {
 		return err
 	}
+
 	h, err := commit.ShortId()
 	if err != nil {
 		return err
 	}
 	fmt.Println(h, commit.Summary())
 
-	err = intgit.PostCommitHook(cco.Repo.Path())
+	err = tugit.PostCommitHook(cco.Repo.Path())
 	if err != nil {
 		fmt.Println("Warning, post-commit hook failed:", err.Error())
 	}
 
 	return nil
-}
-
-func needCommit(r *git.Repository) (bool, error) {
-	s, err := r.StatusList(&git.StatusOptions{Show: git.StatusShowIndexAndWorkdir, Flags: git.StatusOptIncludeUntracked})
-	if err != nil {
-		return false, err
-	}
-
-	count, err := s.EntryCount()
-	if err != nil {
-		return false, err
-	}
-	if count <= 0 {
-		return false, nil
-	}
-	for i := 0; i < count; i++ {
-		se, err := s.ByIndex(i)
-		if err != nil {
-			return false, err
-		}
-		if se.Status <= git.StatusIndexTypeChange {
-			return true, nil
-		}
-	}
-	return false, errors.New("No changes added to commit")
-}
-
-func writeCommit(r *git.Repository, msg string) (*git.Commit, error) {
-	sig, err := signature(r)
-	if err != nil {
-		return nil, err
-	}
-
-	idx, err := r.Index()
-	if err != nil {
-		return nil, err
-	}
-	treeId, err := idx.WriteTree()
-	if err != nil {
-		return nil, err
-	}
-	tree, err := r.LookupTree(treeId)
-	if err != nil {
-		return nil, err
-	}
-
-	parents := []*git.Commit{}
-	head, err := r.Head()
-	if err == nil { // We found head
-		headRef, err := r.LookupCommit(head.Target())
-		if err != nil {
-			return nil, err
-		}
-		parents = append(parents, headRef)
-	}
-
-	oid, err := r.CreateCommit("HEAD", sig, sig, msg, tree, parents...)
-	if err != nil {
-		return nil, err
-	}
-
-	return r.LookupCommit(oid)
-}
-
-func signature(r *git.Repository) (*git.Signature, error) {
-	config, err := r.Config()
-	if err != nil {
-		return nil, err
-	}
-
-	email, _ := config.LookupString("user.email")
-	name, _ := config.LookupString("user.name")
-
-	return &git.Signature{
-		Email: email,
-		Name:  name,
-		When:  time.Now(),
-	}, nil
 }
 
 func promptEditor(msg string) string {
