@@ -12,9 +12,7 @@ require (
 	github.com/imdario/mergo v0.3.11
 	github.com/ktr0731/go-fuzzyfinder v0.3.2
 	github.com/libgit2/git2go/v30 v30.3.11
-	github.com/mitchellh/go-homedir v1.1.0
 	github.com/nsf/termbox-go v0.0.0-20201124104050-ed494de23a00
 	github.com/spf13/cobra v1.1.3
-	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
 )
