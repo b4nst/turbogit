@@ -19,7 +19,7 @@ func TestCommit(t *testing.T) {
 	assert.Equal(t, "commit message", commit.Message())
 	assert.Equal(t, test.GIT_USERNAME, commit.Author().Name)
 	assert.Equal(t, test.GIT_EMAIL, commit.Author().Email)
-	assert.WithinDuration(t, time.Now(), commit.Author().When, time.Second)
+	assert.WithinDuration(t, time.Now(), commit.Author().When, 5*time.Second)
 	head, err := r.Head()
 	require.NoError(t, err)
 	headCommit, err := r.LookupCommit(head.Target())

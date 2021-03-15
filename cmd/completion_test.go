@@ -1,37 +1,24 @@
 package cmd
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
+	"github.com/b4nst/turbogit/internal/test"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestCompletion(t *testing.T) {
 	cmd := &cobra.Command{}
 
-	stdout := os.Stdout
-	restore := func() {
-		os.Stdout = stdout
-	}
+	f, restore := test.CaptureStd(t, os.Stdout)
 	defer restore()
+	defer os.RemoveAll(f.Name())
 
-	devnull, err := ioutil.TempFile("", "dev-null")
-	require.NoError(t, err)
-	defer os.RemoveAll(devnull.Name())
-	os.Stdout = devnull
-
-	err = completion(cmd, []string{"bash"})
-	assert.NoError(t, err)
-	err = completion(cmd, []string{"zsh"})
-	assert.NoError(t, err)
-	err = completion(cmd, []string{"fish"})
-	assert.NoError(t, err)
-	err = completion(cmd, []string{"powershell"})
-	assert.NoError(t, err)
-	err = completion(cmd, []string{"other"})
-	assert.Error(t, err)
+	assert.NoError(t, completion(cmd, []string{"bash"}))
+	assert.NoError(t, completion(cmd, []string{"zsh"}))
+	assert.NoError(t, completion(cmd, []string{"fish"}))
+	assert.NoError(t, completion(cmd, []string{"powershell"}))
+	assert.Error(t, completion(cmd, []string{"other"}))
 }

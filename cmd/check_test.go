@@ -8,23 +8,14 @@ import (
 
 	tugit "github.com/b4nst/turbogit/internal/git"
 	"github.com/b4nst/turbogit/internal/test"
-	git "github.com/libgit2/git2go/v30"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRunCheck(t *testing.T) {
-	dir, err := ioutil.TempDir("", "turbogit-test-check")
-	require.NoError(t, err)
-	defer os.RemoveAll(dir)
-	require.NoError(t, os.Chdir(dir))
-
-	r, err := git.InitRepository(dir, false)
-	require.NoError(t, err)
-	config, err := r.Config()
-	require.NoError(t, err)
-	require.NoError(t, config.SetString("user.name", "alice"))
-	require.NoError(t, config.SetString("user.email", "alice@ecorp.com"))
+	r := test.TestRepo(t)
+	defer test.CleanupRepo(t, r)
+	test.InitRepoConf(t, r)
 
 	c1, err := tugit.Commit(r, "bad commit 1")
 	require.NoError(t, err)
