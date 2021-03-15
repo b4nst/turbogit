@@ -39,14 +39,16 @@ var versionCmd = &cobra.Command{
 	Use:                   "version",
 	Short:                 "Print current version",
 	DisableFlagsInUseLine: true,
-	Run: func(cmd *cobra.Command, args []string) {
-		w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, '\t', tabwriter.AlignRight)
-		defer w.Flush()
+	Run:                   runVersion,
+}
 
-		fmt.Fprintf(w, "%s\t%s\t", "Version:", Version)
-		fmt.Fprintf(w, "\n%s\t%s\t", "Go version:", runtime.Version())
-		fmt.Fprintf(w, "\n%s\t%s\t", "Git commit:", Commit)
-		fmt.Fprintf(w, "\n%s\t%s\t", "Built:", BuildDate)
-		fmt.Fprintf(w, "\n%s\t%s/%s\t", "OS/Arch:", runtime.GOOS, runtime.GOARCH)
-	},
+func runVersion(cmd *cobra.Command, args []string) {
+	w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, '\t', tabwriter.AlignRight)
+	defer w.Flush()
+
+	fmt.Fprintf(w, "%s\t%s\t", "Version:", Version)
+	fmt.Fprintf(w, "\n%s\t%s\t", "Go version:", runtime.Version())
+	fmt.Fprintf(w, "\n%s\t%s\t", "Git commit:", Commit)
+	fmt.Fprintf(w, "\n%s\t%s\t", "Built:", BuildDate)
+	fmt.Fprintf(w, "\n%s\t%s/%s\t", "OS/Arch:", runtime.GOOS, runtime.GOARCH)
 }
