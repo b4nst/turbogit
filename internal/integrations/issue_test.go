@@ -12,9 +12,11 @@ import (
 
 func TestFormat(t *testing.T) {
 	id := IssueDescription{"ID-245", "Issue name", "An issue description.", "Jira", "type"}
-	actual := id.Format(true)
+	actual := id.Format(false)
 	assert.Equal(t, "ID-245", id.ID)
-	assert.Equal(t, "\x1b[1;32;89mID-245\x1b[0m - Issue name\n\nAn issue description.\n\nIssue provided by \x1b[0;36;89mJira\x1b[0m", actual)
+	assert.Equal(t, "ID-245 - Issue name\n\nAn issue description.\n\nIssue provided by Jira", actual)
+	actual = id.Format(true)
+	assert.Contains(t, actual, "\x1B[0m")
 }
 
 func TestShortFormat(t *testing.T) {
