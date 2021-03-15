@@ -25,12 +25,8 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path"
 
 	"github.com/spf13/cobra"
-
-	homedir "github.com/mitchellh/go-homedir"
-	"github.com/spf13/viper"
 )
 
 const (
@@ -59,30 +55,4 @@ func Execute() {
 
 func init() {
 	log.SetFlags(0)
-	cobra.OnInitialize(initConfig)
-
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", fmt.Sprintf("config file (default is $HOME/.config/%s/%s.toml)", BIN_NAME, BIN_NAME))
-}
-
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		viper.AddConfigPath(path.Join(home, ".config", BIN_NAME))
-		viper.SetConfigType("toml")
-		viper.SetConfigName(BIN_NAME)
-	}
-
-	viper.AutomaticEnv() // read in environment variables that match
-
-	viper.ReadInConfig()
 }
