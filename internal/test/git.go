@@ -21,6 +21,7 @@ func TestRepo(t *testing.T) (repo *git.Repository) {
 	require.NoError(t, err)
 	r, err := git.InitRepository(path, false)
 	require.NoError(t, err)
+	require.NoError(t, os.Chdir(path))
 	return r
 }
 
