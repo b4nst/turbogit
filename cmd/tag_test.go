@@ -55,12 +55,12 @@ func TestBumpVersion(t *testing.T) {
 		{"bump version 4", &semver.Version{Major: 3, Minor: 4, Patch: 7}, format.BUMP_MINOR, nil, &semver.Version{Major: 3, Minor: 5, Patch: 0}},
 		{"bump version 5", &semver.Version{Major: 0, Minor: 0, Patch: 0}, format.BUMP_MAJOR, nil, &semver.Version{Major: 0, Minor: 1, Patch: 0}},
 		{"bump version 6", &semver.Version{Major: 3, Minor: 4, Patch: 7}, format.BUMP_MAJOR, nil, &semver.Version{Major: 4, Minor: 0, Patch: 0}},
-		{"bump version 7", nil, format.BUMP_PATCH, errors.New("Received nil pointer"), nil},
-		{"bump version 8", nil, format.BUMP_MINOR, errors.New("Received nil pointer"), nil},
-		{"bump version 9", nil, format.BUMP_MAJOR, errors.New("Received nil pointer"), nil},
+		{"bump version 7", nil, format.BUMP_PATCH, errors.New("Received nil pointer for version"), nil},
+		{"bump version 8", nil, format.BUMP_MINOR, errors.New("Received nil pointer for version"), nil},
+		{"bump version 9", nil, format.BUMP_MAJOR, errors.New("Received nil pointer for version"), nil},
 		{"bump version 10", &semver.Version{Major: 0, Minor: 0, Patch: 0}, format.BUMP_NONE, nil, &semver.Version{Major: 0, Minor: 0, Patch: 0}},
 		{"bump version 11", &semver.Version{Major: 3, Minor: 4, Patch: 7}, format.BUMP_NONE, nil, &semver.Version{Major: 3, Minor: 4, Patch: 7}},
-		{"bump version 12", nil, format.BUMP_MAJOR, errors.New("Received nil pointer"), nil},
+		{"bump version 12", nil, format.BUMP_MAJOR, errors.New("Received nil pointer for version"), nil},
 	}
 
 	for _, tt := range tests {
