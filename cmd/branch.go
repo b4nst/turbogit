@@ -26,9 +26,9 @@ import (
 	"log"
 	"strings"
 
-	"github.com/b4nst/turbogit/internal/format"
-	tugit "github.com/b4nst/turbogit/internal/git"
-	"github.com/b4nst/turbogit/internal/integrations"
+	"github.com/b4nst/turbogit/pkg/format"
+	tugit "github.com/b4nst/turbogit/pkg/git"
+	"github.com/b4nst/turbogit/pkg/integrations"
 
 	git "github.com/libgit2/git2go/v30"
 	"github.com/spf13/cobra"

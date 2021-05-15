@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/b4nst/turbogit/internal/format"
+	"github.com/b4nst/turbogit/pkg/format"
 	"github.com/blang/semver/v4"
 	"github.com/stretchr/testify/assert"
 )

@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	tugit "github.com/b4nst/turbogit/internal/git"
+	tugit "github.com/b4nst/turbogit/pkg/git"
 	git "github.com/libgit2/git2go/v30"
 	"github.com/xanzy/go-gitlab"
 )

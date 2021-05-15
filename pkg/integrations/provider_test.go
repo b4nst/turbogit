@@ -3,7 +3,7 @@ package integrations
 import (
 	"testing"
 
-	"github.com/b4nst/turbogit/internal/test"
+	"github.com/b4nst/turbogit/pkg/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

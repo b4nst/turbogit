@@ -3,9 +3,9 @@ package cmd
 import (
 	"testing"
 
-	"github.com/b4nst/turbogit/internal/format"
-	tugit "github.com/b4nst/turbogit/internal/git"
-	"github.com/b4nst/turbogit/internal/test"
+	"github.com/b4nst/turbogit/pkg/format"
+	tugit "github.com/b4nst/turbogit/pkg/git"
+	"github.com/b4nst/turbogit/pkg/test"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

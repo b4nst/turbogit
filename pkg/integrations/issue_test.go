@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/b4nst/turbogit/internal/format"
+	"github.com/b4nst/turbogit/pkg/format"
 	"github.com/ktr0731/go-fuzzyfinder"
 	"github.com/nsf/termbox-go"
 	"github.com/stretchr/testify/assert"

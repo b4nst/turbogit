@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/b4nst/turbogit/internal/test"
+	"github.com/b4nst/turbogit/pkg/test"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
