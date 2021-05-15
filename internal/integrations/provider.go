@@ -27,5 +27,14 @@ func ProvidersFrom(r *git.Repository) ([]Provider, error) {
 		p = append(p, *jp)
 	}
 
+	// Gitlab
+	glp, err := NewGitLabProvider(r)
+	if err != nil {
+		return nil, err
+	}
+	if glp != nil {
+		p = append(p, *glp)
+	}
+
 	return p, nil
 }

@@ -15,4 +15,6 @@ require (
 	github.com/nsf/termbox-go v0.0.0-20201124104050-ed494de23a00
 	github.com/spf13/cobra v1.1.3
 	github.com/stretchr/testify v1.7.0
+	github.com/whilp/git-urls v1.0.0
+	github.com/xanzy/go-gitlab v0.39.0
 )
