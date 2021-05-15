@@ -95,14 +95,10 @@ func parseTagCmd(cmd *cobra.Command, args []string) (*TagCmdOption, error) {
 	}, nil
 }
 
-func runTag(tco *TagCmdOption) error {
-	r := tco.Repo
-
-	bump := format.BUMP_NONE
-	var curr *semver.Version
+func commitWalker(bump *format.Bump, curr *semver.Version) (func(*git.Commit) bool, error) {
 	dfo, err := git.DefaultDescribeFormatOptions()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	dco := &git.DescribeOptions{
 		MaxCandidatesTags:     1,
@@ -111,6 +107,33 @@ func runTag(tco *TagCmdOption) error {
 		OnlyFollowFirstParent: true,
 	}
 
+	return func(c *git.Commit) bool {
+		dr, err := c.Describe(dco)
+		if err != nil {
+			// No next tag matching
+			*bump = format.NextBump(c.Message(), *bump)
+			return true
+		}
+		d, err := dr.Format(&dfo)
+		if err != nil {
+			panic(err)
+		}
+		v, offset, err := parseDescription(d)
+		*curr = *v
+		if err != nil {
+			panic(err)
+		}
+		if offset <= 1 {
+			return false
+		}
+		*bump = format.NextBump(c.Message(), *bump)
+		return true
+	}, nil
+}
+
+func runTag(tco *TagCmdOption) error {
+	r := tco.Repo
+
 	walk, err := r.Walk()
 	if err != nil {
 		return err
@@ -118,28 +141,12 @@ func runTag(tco *TagCmdOption) error {
 	if err := walk.PushHead(); err != nil {
 		return err
 	}
-	// Walker function, find current tag and next bump
-	walker := func(c *git.Commit) bool {
-		dr, err := c.Describe(dco)
-		if err != nil {
-			// No next tag matching
-			bump = format.NextBump(c.Message(), bump)
-			return true
-		}
-		d, err := dr.Format(&dfo)
-		if err != nil {
-			panic(err)
-		}
-		var offset int
-		curr, offset, err = parseDescription(d)
-		if err != nil {
-			panic(err)
-		}
-		if offset <= 1 {
-			return false
-		}
-		bump = format.NextBump(c.Message(), bump)
-		return true
+
+	bump := format.BUMP_NONE
+	curr := semver.Version{}
+	walker, err := commitWalker(&bump, &curr)
+	if err != nil {
+		return err
 	}
 	if err := walk.Iterate(walker); err != nil {
 		return err
@@ -149,25 +156,23 @@ func runTag(tco *TagCmdOption) error {
 		fmt.Println("Nothing to do")
 		return nil
 	}
-	// If no current semver tag, init to 0.0.0
-	if curr == nil {
-		curr = &semver.Version{}
-	}
 	// Bump tag
-	if err := bumpVersion(curr, bump); err != nil {
+	if err := bumpVersion(&curr, bump); err != nil {
 		return err
 	}
 
 	tagname := fmt.Sprintf("refs/tags/%s%s", TAG_PREFIX, curr)
-	if tco.DryRun {
-		// Dry run
-		fmt.Println(tagname, "will be created")
+	return tagHead(r, tagname, tco.DryRun)
+}
+
+func tagHead(r *git.Repository, tagname string, dry bool) error {
+	head, err := r.Head()
+	if err != nil {
+		return err
+	}
+	if dry {
+		fmt.Println(tagname, "would be created on", head.Target())
 	} else {
-		// Tag
-		head, err := r.Head()
-		if err != nil {
-			return err
-		}
 		tag, err := r.References.Create(tagname, head.Target(), false, "")
 		if err != nil {
 			return err
@@ -179,7 +184,7 @@ func runTag(tco *TagCmdOption) error {
 
 func bumpVersion(curr *semver.Version, bump format.Bump) error {
 	if curr == nil {
-		return errors.New("Received nil pointer")
+		return errors.New("Received nil pointer for version")
 	}
 	switch bump {
 	case format.BUMP_MAJOR:
