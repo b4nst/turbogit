@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	tugit "github.com/b4nst/turbogit/internal/git"
-	"github.com/b4nst/turbogit/internal/test"
+	tugit "github.com/b4nst/turbogit/pkg/git"
+	"github.com/b4nst/turbogit/pkg/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/b4nst/turbogit/internal/format"
+	"github.com/b4nst/turbogit/pkg/format"
 	"github.com/hpcloud/golor"
 	"github.com/ktr0731/go-fuzzyfinder"
 )

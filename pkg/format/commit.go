@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/b4nst/turbogit/internal/constants"
+	"github.com/b4nst/turbogit/pkg/constants"
 	"github.com/hpcloud/golor"
 	"github.com/imdario/mergo"
 )
