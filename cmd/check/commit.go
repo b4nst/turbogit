@@ -19,7 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package cmd
+package check
 
 import (
 	"errors"
@@ -34,20 +34,20 @@ import (
 )
 
 func init() {
-	RootCmd.AddCommand(checkCmd)
+	CheckCmd.AddCommand(commitCmd)
 
-	checkCmd.Flags().BoolP("all", "a", false, "Check all the commits in refs/*, along with HEAD")
-	checkCmd.Flags().StringP("from", "f", "HEAD", "Commit to start from. Can be a hash or any revision as accepted by rev parse.")
+	commitCmd.Flags().BoolP("all", "a", false, "Check all the commits in refs/*, along with HEAD")
+	commitCmd.Flags().StringP("from", "f", "HEAD", "Commit to start from. Can be a hash or any revision as accepted by rev parse.")
 }
 
-type CheckCmdOption struct {
+type CommitCmdOption struct {
 	All  bool
 	From string
 	Repo *git.Repository
 }
 
-var checkCmd = &cobra.Command{
-	Use:                   "check",
+var commitCmd = &cobra.Command{
+	Use:                   "commit",
 	Short:                 "Check the history to follow conventional commit",
 	DisableFlagsInUseLine: true,
 	Example: `
@@ -56,21 +56,21 @@ $ tug check
 `,
 	Args:         cobra.NoArgs,
 	SilenceUsage: true,
-	Run:          runCheckCmd,
+	Run:          runCommmitCmd,
 }
 
-func runCheckCmd(cmd *cobra.Command, args []string) {
-	cco, err := parseCheckCmd(cmd, args)
+func runCommmitCmd(cmd *cobra.Command, args []string) {
+	cco, err := parseCommitCmd(cmd, args)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = runCheck(cco)
+	err = runCommit(cco)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func parseCheckCmd(cmd *cobra.Command, args []string) (*CheckCmdOption, error) {
+func parseCommitCmd(cmd *cobra.Command, args []string) (*CommitCmdOption, error) {
 	// --all
 	fAll, err := cmd.Flags().GetBool("all")
 	if err != nil {
@@ -88,14 +88,14 @@ func parseCheckCmd(cmd *cobra.Command, args []string) (*CheckCmdOption, error) {
 		return nil, err
 	}
 
-	return &CheckCmdOption{
+	return &CommitCmdOption{
 		All:  fAll,
 		From: fFrom,
 		Repo: repo,
 	}, nil
 }
 
-func runCheck(cco *CheckCmdOption) error {
+func runCommit(cco *CommitCmdOption) error {
 	r := cco.Repo
 
 	walk, err := r.Walk()

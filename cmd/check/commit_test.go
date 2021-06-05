@@ -1,4 +1,4 @@
-package cmd
+package check
 
 import (
 	"fmt"
@@ -29,7 +29,7 @@ func TestRunCheck(t *testing.T) {
 	require.NoError(t, err)
 
 	stderr, reset := test.CaptureStd(t, os.Stderr)
-	err = runCheck(&CheckCmdOption{All: false, From: "HEAD", Repo: r})
+	err = runCommit(&CheckCmdOption{All: false, From: "HEAD", Repo: r})
 	reset()
 	assert.EqualError(t, err, "This commits are not compliant")
 	stde, err := ioutil.ReadFile(stderr.Name())

@@ -19,40 +19,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package cmd
+package check
 
 import (
-	"fmt"
-	"log"
-	"os"
-
-	"github.com/b4nst/turbogit/cmd/check"
 	"github.com/spf13/cobra"
 )
 
-const (
-	BIN_NAME = "tug"
-)
-
-var (
-	Version   = "dev"
-	Commit    = "nil"
-	BuildDate = "nil"
-
-	RootCmd = &cobra.Command{
-		Use:   BIN_NAME,
-		Short: "Improve your git workflow.",
-	}
-)
-
-func Execute() {
-	if err := RootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-}
-
-func init() {
-	RootCmd.AddCommand(check.CheckCmd)
-	log.SetFlags(0)
+var CheckCmd = &cobra.Command{
+	Use:   "check",
+	Short: "Check commits or config",
 }
