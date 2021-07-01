@@ -35,18 +35,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	TAG_PREFIX = "v"
-)
-
 func init() {
 	RootCmd.AddCommand(tagCmd)
 
 	tagCmd.Flags().BoolP("dry-run", "d", false, "Do not tag.")
+	tagCmd.Flags().StringP("prefix", "p", "v", "Tag prefix.")
 }
 
 type TagCmdOption struct {
 	DryRun bool
+	Prefix string
 	Repo   *git.Repository
 }
 
@@ -83,6 +81,12 @@ func parseTagCmd(cmd *cobra.Command, args []string) (*TagCmdOption, error) {
 		return nil, err
 	}
 
+	// --prefix
+	fPrefix, err := cmd.Flags().GetString("prefix")
+	if err != nil {
+		return nil, err
+	}
+
 	// Find repo
 	repo, err := tugit.Getrepo()
 	if err != nil {
@@ -91,11 +95,12 @@ func parseTagCmd(cmd *cobra.Command, args []string) (*TagCmdOption, error) {
 
 	return &TagCmdOption{
 		DryRun: fDryRun,
+		Prefix: fPrefix,
 		Repo:   repo,
 	}, nil
 }
 
-func commitWalker(bump *format.Bump, curr *semver.Version) (func(*git.Commit) bool, error) {
+func commitWalker(bump *format.Bump, curr *semver.Version, prefix string) (func(*git.Commit) bool, error) {
 	dfo, err := git.DefaultDescribeFormatOptions()
 	if err != nil {
 		return nil, err
@@ -103,7 +108,7 @@ func commitWalker(bump *format.Bump, curr *semver.Version) (func(*git.Commit) bo
 	dco := &git.DescribeOptions{
 		MaxCandidatesTags:     1,
 		Strategy:              git.DescribeTags,
-		Pattern:               fmt.Sprintf("%s*", TAG_PREFIX),
+		Pattern:               fmt.Sprintf("%s*", prefix),
 		OnlyFollowFirstParent: true,
 	}
 
@@ -144,7 +149,7 @@ func runTag(tco *TagCmdOption) error {
 
 	bump := format.BUMP_NONE
 	curr := semver.Version{}
-	walker, err := commitWalker(&bump, &curr)
+	walker, err := commitWalker(&bump, &curr, tco.Prefix)
 	if err != nil {
 		return err
 	}
@@ -161,7 +166,7 @@ func runTag(tco *TagCmdOption) error {
 		return err
 	}
 
-	tagname := fmt.Sprintf("refs/tags/%s%s", TAG_PREFIX, curr)
+	tagname := fmt.Sprintf("refs/tags/%s%s", tco.Prefix, curr)
 	return tagHead(r, tagname, tco.DryRun)
 }
 
