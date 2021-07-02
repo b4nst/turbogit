@@ -3,7 +3,7 @@ package git
 import (
 	"net/url"
 
-	git "github.com/libgit2/git2go/v30"
+	git "github.com/libgit2/git2go/v31"
 	giturls "github.com/whilp/git-urls"
 )
 

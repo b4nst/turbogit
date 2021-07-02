@@ -33,7 +33,7 @@ import (
 	"github.com/b4nst/turbogit/pkg/format"
 	tugit "github.com/b4nst/turbogit/pkg/git"
 	"github.com/hpcloud/golor"
-	git "github.com/libgit2/git2go/v30"
+	git "github.com/libgit2/git2go/v31"
 	"github.com/spf13/cobra"
 )
 

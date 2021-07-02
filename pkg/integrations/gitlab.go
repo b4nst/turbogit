@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	tugit "github.com/b4nst/turbogit/pkg/git"
-	git "github.com/libgit2/git2go/v30"
+	git "github.com/libgit2/git2go/v31"
 	"github.com/xanzy/go-gitlab"
 )
 
