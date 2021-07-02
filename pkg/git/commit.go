@@ -1,6 +1,6 @@
 package git
 
-import git "github.com/libgit2/git2go/v30"
+import git "github.com/libgit2/git2go/v31"
 
 // RepoTree return the current index tree
 func RepoTree(r *git.Repository) (*git.Tree, error) {

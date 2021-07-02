@@ -1,7 +1,7 @@
 package integrations
 
 import (
-	git "github.com/libgit2/git2go/v30"
+	git "github.com/libgit2/git2go/v31"
 )
 
 // Provider interface abstracts cross-platform providers

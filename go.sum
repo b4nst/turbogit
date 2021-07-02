@@ -386,8 +386,8 @@ github.com/kunwardeep/paralleltest v1.0.2/go.mod h1:ZPqNm1fVHPllh5LPVujzbVz1JN2G
 github.com/kyoh86/exportloopref v0.1.8/go.mod h1:1tUcJeiioIs7VWe5gcOObrux3lb66+sBqGZrRkMwPgg=
 github.com/lib/pq v1.0.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
 github.com/lib/pq v1.1.1/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
-github.com/libgit2/git2go/v30 v30.3.14 h1:YKpaTuP5hK0GWAUHHt7uSqI6uHEHycs88tiL7/3HTws=
-github.com/libgit2/git2go/v30 v30.3.14/go.mod h1:F2004unMfAvkfAlTm+gv20d/84rY8e6gHKYifo0bRXA=
+github.com/libgit2/git2go/v31 v31.4.14 h1:6GOd3965D9e/+gjxCwZF4eQ+vB9kKB4yKFqdQr6XZ2E=
+github.com/libgit2/git2go/v31 v31.4.14/go.mod h1:c/rkJcBcUFx6wHaT++UwNpKvIsmPNqCeQ/vzO4DrEec=
 github.com/logrusorgru/aurora v0.0.0-20181002194514-a7b3b318ed4e/go.mod h1:7rIyQOR62GCctdiQpZ/zOJlFyk6y+94wXzv6RNZgaR4=
 github.com/magiconair/properties v1.8.1/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/magiconair/properties v1.8.4/go.mod h1:y3VJvCyxH9uVvJTWEGAELF3aiYNyPKd5NZ3oSwXrF60=
