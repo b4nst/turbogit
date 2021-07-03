@@ -60,6 +60,9 @@ Use "tug [command] --help" for more information about a command.
 
 ## Installation
 
+> turbogit needs [libgit2](https://github.com/libgit2/libgit2) >= 1.1.0 on your system
+> Some package manager will handle its installation automatically
+
 ### macOS
 
 `turbogit` is available on [MacPorts](https://www.macports.org/install.php) and Homebrew.
