@@ -29,8 +29,8 @@ jobs:
         id: get_version
         run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
 
-  package_linux:
-    name: Package Linux
+  package_deb:
+    name: Package deb
     runs-on: ubuntu-latest
     needs: create_release
     env:
@@ -42,6 +42,10 @@ jobs:
         with:
           go-version: ^1.14
         id: go
+      - name: Set up fmp
+        uses: fortran-lang/setup-fpm@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
       - name: Get dependencies
@@ -64,20 +68,74 @@ jobs:
         env:
           TUG_COMMIT: ${{ github.sha }}
           TUG_VERSION: ${{ github.event.ref }}
-          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
+          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.deb', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
         run: |
           make build
-          tar -zcvf ${ASSET_NAME} bin/tug
+          fpm -s dir -t deb -p ${ASSET_NAME} -d "libgit2 (>=1.1.0)" -C ./bin -v ${TUG_VERSION} --prefix /opt/local/bin/ -n turbogit --description "Opinionated cli enforcing clean git workflow without comprising UX"
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
+          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.deb', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
           asset_path: ./${{ env.ASSET_NAME }}
           asset_name: ${{ env.ASSET_NAME }}
-          asset_content_type: application/gzip
+          asset_content_type: application/vnd.debian.binary-package
+
+  package_apk:
+    name: Package apk
+    runs-on: ubuntu-latest
+    needs: create_release
+    env:
+      GOOS: linux
+      GOARCH: amd64
+    steps:
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.14
+        id: go
+      - name: Set up fmp
+        uses: fortran-lang/setup-fpm@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+      - name: Get dependencies
+        run: |
+          sudo apt update
+          sudo apt install cmake
+          curl -L https://github.com/libgit2/libgit2/releases/download/v1.1.0/libgit2-1.1.0.tar.gz | tar -xz
+          mkdir -p libgit2-1.1.0/build
+          cd libgit2-1.1.0/build
+          cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_CLAR=OFF
+          sudo cmake --build . --target install
+          cd -
+          rm -rf libgit2-1.1.0
+          go get -v -t -d ./...
+          if [ -f Gopkg.toml ]; then
+              curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+              dep ensure
+          fi
+      - name: Package
+        env:
+          TUG_COMMIT: ${{ github.sha }}
+          TUG_VERSION: ${{ github.event.ref }}
+          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.apk', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
+        run: |
+          make build
+          fpm -s dir -t apk -p ${ASSET_NAME} -d "libgit2 (>=1.1.0)" -C ./bin -v ${TUG_VERSION} --prefix /opt/local/bin/ -n turbogit --description "Opinionated cli enforcing clean git workflow without comprising UX"
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.apk', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ./${{ env.ASSET_NAME }}
+          asset_name: ${{ env.ASSET_NAME }}
+          asset_content_type: aplication/octet-stream
 
   package_darwin:
     name: Package macOS
@@ -92,27 +150,29 @@ jobs:
         with:
           go-version: ^1.14
         id: go
+      - name: Set up fmp
+        uses: fortran-lang/setup-fpm@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
       - name: Install dependencies
-        run: |
-          wget https://raw.githubusercontent.com/Homebrew/homebrew-core/1ca11b5a5dbd39d483602e73ddcea78ca8a65de8/Formula/libgit2.rb
-          brew install ./libgit2.rb
+        run: brew install libgit2
       - name: Package
         env:
           TUG_COMMIT: ${{ github.sha }}
           TUG_VERSION: ${{ github.event.ref }}
-          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
+          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.pkg', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
         run: |
           make build
-          tar -zcvf ${ASSET_NAME} bin/tug
+          fpm -s dir -t osxpkg -p ${ASSET_NAME} -C ./bin -v ${TUG_VERSION} --prefix /opt/local/bin/ -n turbogit --description "Opinionated cli enforcing clean git workflow without comprising UX"
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
+          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.pkg', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
           asset_path: ./${{ env.ASSET_NAME }}
           asset_name: ${{ env.ASSET_NAME }}
-          asset_content_type: application/gzip
+          asset_content_type: application/vnd.apple.installer+xml
