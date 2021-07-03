@@ -125,7 +125,7 @@ jobs:
           ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.apk', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
         run: |
           make build
-          fpm -s dir -t apk -p ${ASSET_NAME} -d "libgit2 (>=1.1.0)" -C ./bin -v ${TUG_VERSION} --prefix /opt/local/bin/ -n turbogit --description "Opinionated cli enforcing clean git workflow without comprising UX"
+          fpm -s dir -t apk -p ${ASSET_NAME} -d "libgit2 >=1.1.0" -C ./bin -v ${TUG_VERSION} --prefix /opt/local/bin/ -n turbogit --description "Opinionated cli enforcing clean git workflow without comprising UX"
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
@@ -179,7 +179,7 @@ jobs:
           ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.rpm', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
         run: |
           make build
-          fpm -s dir -t rpm -p ${ASSET_NAME} -d "libgit2 (>=1.1.0)" -C ./bin -v ${TUG_VERSION} --prefix /opt/local/bin/ -n turbogit --description "Opinionated cli enforcing clean git workflow without comprising UX"
+          fpm -s dir -t rpm -p ${ASSET_NAME} -d "libgit2 >=1.1.0" -C ./bin -v ${TUG_VERSION} --prefix /opt/local/bin/ -n turbogit --description "Opinionated cli enforcing clean git workflow without comprising UX"
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
