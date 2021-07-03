@@ -137,6 +137,60 @@ jobs:
           asset_name: ${{ env.ASSET_NAME }}
           asset_content_type: aplication/octet-stream
 
+  package_rpm:
+    name: Package apk
+    runs-on: ubuntu-latest
+    needs: create_release
+    env:
+      GOOS: linux
+      GOARCH: amd64
+    steps:
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.14
+        id: go
+      - name: Set up fmp
+        uses: fortran-lang/setup-fpm@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+      - name: Get dependencies
+        run: |
+          sudo apt update
+          sudo apt install cmake
+          curl -L https://github.com/libgit2/libgit2/releases/download/v1.1.0/libgit2-1.1.0.tar.gz | tar -xz
+          mkdir -p libgit2-1.1.0/build
+          cd libgit2-1.1.0/build
+          cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_CLAR=OFF
+          sudo cmake --build . --target install
+          cd -
+          rm -rf libgit2-1.1.0
+          go get -v -t -d ./...
+          if [ -f Gopkg.toml ]; then
+              curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+              dep ensure
+          fi
+      - name: Package
+        env:
+          TUG_COMMIT: ${{ github.sha }}
+          TUG_VERSION: ${{ github.event.ref }}
+          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.rpm', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
+        run: |
+          make build
+          fpm -s dir -t rpm -p ${ASSET_NAME} -d "libgit2 (>=1.1.0)" -C ./bin -v ${TUG_VERSION} --prefix /opt/local/bin/ -n turbogit --description "Opinionated cli enforcing clean git workflow without comprising UX"
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.rpm', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ./${{ env.ASSET_NAME }}
+          asset_name: ${{ env.ASSET_NAME }}
+          asset_content_type: aplication/octet-stream
+
   package_darwin:
     name: Package macOS
     runs-on: macos-latest
