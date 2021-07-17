@@ -12,6 +12,7 @@ jobs:
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
       raw_tag: ${{ steps.get_version.outputs.VERSION }}
+      tag: ${{ steps.get_version.outputs.VERSION_NO_PREFIX }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -27,7 +28,9 @@ jobs:
           prerelease: false
       - name: Get the version
         id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
+        run: |
+          echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
+          echo ::set-output name=VERSION_NO_PREFIX::${GITHUB_REF#refs/tags/v}
 
   package_deb:
     name: Package deb
@@ -64,7 +67,7 @@ jobs:
       - name: Package
         env:
           TUG_COMMIT: ${{ github.sha }}
-          TUG_VERSION: ${{ github.event.ref }}
+          TUG_VERSION: ${{ needs.create_release.outputs.tag }}
           ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.deb', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
         run: |
           make build
@@ -115,7 +118,7 @@ jobs:
       - name: Package
         env:
           TUG_COMMIT: ${{ github.sha }}
-          TUG_VERSION: ${{ github.event.ref }}
+          TUG_VERSION: ${{ needs.create_release.outputs.tag }}
           ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.apk', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
         run: |
           make build
@@ -149,7 +152,7 @@ jobs:
       - name: Get dependencies
         run: |
           sudo apt update
-          sudo apt install cmake ruby ruby-dev rubygems build-essential
+          sudo apt install cmake ruby ruby-dev rubygems build-essential rpm
           sudo gem install --no-document fpm
           curl -L https://github.com/libgit2/libgit2/releases/download/v1.1.0/libgit2-1.1.0.tar.gz | tar -xz
           mkdir -p libgit2-1.1.0/build
@@ -166,7 +169,7 @@ jobs:
       - name: Package
         env:
           TUG_COMMIT: ${{ github.sha }}
-          TUG_VERSION: ${{ github.event.ref }}
+          TUG_VERSION: ${{ needs.create_release.outputs.tag }}
           ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.rpm', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
         run: |
           make build
@@ -206,7 +209,7 @@ jobs:
       - name: Package
         env:
           TUG_COMMIT: ${{ github.sha }}
-          TUG_VERSION: ${{ github.event.ref }}
+          TUG_VERSION: ${{ needs.create_release.outputs.tag }}
           ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.pkg', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
         run: |
           make build
