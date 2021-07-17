@@ -9,7 +9,7 @@
 ![logo](assets/tu_logo.png)
 
 tug is a cli tool built to help you deal with your day-to-day git work.
-tug enforces convention (e.g. [The Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/))
+tug enforces conventions (e.g. [The Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/))
 without overwhelming you. tug is your friend.
 
 ![tug example](assets/tug.gif)
@@ -137,6 +137,16 @@ Download the .rpm file from the [releases page](https://github.com/b4nst/turbogi
 sudo zypper in ./turbogit_*_linux_amd64.rpm
 ```
 
+#### Alpine
+
+Install and upgrade:
+
+Download the .apk file from the [releases page](https://github.com/b4nst/turbogit/releases/latest)
+
+```shell
+apk add --allow-untrusted ./turbogit_*_linux_amd64.apk
+```
+
 ### Windows
 
 > Since git2go refactor, tug is not available as a Windows package anymore.
@@ -155,6 +165,30 @@ Prebuilt binary available from the [release page](https://github.com/b4nst/turbo
 
 ## Shell completion
 
+### Fish
+
+```shell
+tug completion fish | source
+```
+
+To load completions for each session, execute once:
+
+```shell
+tug completion fish > ~/.config/fish/completions/tug.fish
+```
+
+### Zsh
+
+```zsh
+source <(tug completion zsh)
+```
+
+To load completions for each session, execute once:
+
+```zsh
+tug completion zsh > "${fpath[1]}/_tug"
+```
+
 ### Bash
 
 ```bash
@@ -172,30 +206,6 @@ tug completion bash > /etc/bash_completion.d/tug
 
 ```bash
 tug completion bash > /usr/local/etc/bash_completion.d/tug
-```
-
-### Zsh
-
-```zsh
-source <(tug completion zsh)
-```
-
-To load completions for each session, execute once:
-
-```zsh
-tug completion zsh > "${fpath[1]}/_tug"
-```
-
-### Fish
-
-```shell
-tug completion fish | source
-```
-
-To load completions for each session, execute once:
-
-```shell
-tug completion fish > ~/.config/fish/completions/tug.fish
 ```
 
 ## Contributing
