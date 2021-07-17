@@ -5,7 +5,6 @@
 [![version](https://img.shields.io/github/v/release/b4nst/turbogit?include_prereleases&label=latest&logo=ferrari)](https://github.com/b4nst/turbogit/releases/latest)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/5173f55b5e67109d3ca5/test_coverage)](https://codeclimate.com/github/b4nst/turbogit/test_coverage)
 [![Maintainability](https://api.codeclimate.com/v1/badges/5173f55b5e67109d3ca5/maintainability)](https://codeclimate.com/github/b4nst/turbogit/maintainability)
-![dependabot](https://api.dependabot.com/badges/status?host=github&repo=b4nst/turbogit)
 
 ![logo](assets/tu_logo.png)
 
