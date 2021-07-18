@@ -13,3 +13,9 @@
   - [log](/usage/tug_log)
   - [tag](/usage/tug_tag)
   - [version](/usage/tug_version)
+
+- [Integration](/integration/integration)
+
+  - [GitHub](/integration/github)
+  - [GitLab](/integration/gitlab)
+  - [Jira](/integration/jira)
