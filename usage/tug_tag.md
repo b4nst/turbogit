@@ -25,6 +25,7 @@ $ tug tag
 ```
   -d, --dry-run   Do not tag.
   -h, --help      help for tag
+  -p, --prefix string   Tag prefix. (default "v")
 ```
 
 ### Options inherited from parent commands
