@@ -61,7 +61,7 @@ Use "tug [command] --help" for more information about a command.
 
 [![Packaging status](https://repology.org/badge/vertical-allrepos/turbogit.svg)](https://repology.org/project/turbogit/versions)
 
-> turbogit needs [libgit2](https://github.com/libgit2/libgit2) >= 1.1.0 on your system
+> turbogit needs [libgit2](https://github.com/libgit2/libgit2) >= 1.1.0 on your system.
 > Some package manager will handle its installation automatically
 
 ### macOS
