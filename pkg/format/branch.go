@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	forbiddenChar = regexp.MustCompile(`(?m)[\?\*~^:\\]|@{|\.{2}`)
+	forbiddenChar = regexp.MustCompile(`(?m)[\?\*~^:\\\[\]]|@{|\.{2}`)
 	blank         = regexp.MustCompile(`\s+`)
 	void          = []byte("")
 	sep           = []byte("-")
