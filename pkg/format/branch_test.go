@@ -92,7 +92,7 @@ func TestTugBranchWithType(t *testing.T) {
 }
 
 func TestSanitizeBranch(t *testing.T) {
-	dirty := "/A dirty branch/should ?be *~^:\\ cleaned../"
+	dirty := "/A dirty branch/should ?be *~^:\\ [cleaned]../"
 
 	assert.Equal(t, "A-dirty-branch/should-be-cleaned", sanitizeBranch(dirty))
 }
