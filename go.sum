@@ -407,8 +407,8 @@ github.com/ktr0731/go-fuzzyfinder v0.5.0/go.mod h1:QRA+pBfJrCdpk9CvpPMq2pvyfWNWI
 github.com/leodido/go-urn v1.2.0/go.mod h1:+8+nEpDfqqsY+g338gtMEUOtuK+4dEMhiQEgxpxOKII=
 github.com/lib/pq v1.10.0/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
 github.com/lib/pq v1.10.1/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
-github.com/libgit2/git2go/v31 v31.4.14 h1:6GOd3965D9e/+gjxCwZF4eQ+vB9kKB4yKFqdQr6XZ2E=
-github.com/libgit2/git2go/v31 v31.4.14/go.mod h1:c/rkJcBcUFx6wHaT++UwNpKvIsmPNqCeQ/vzO4DrEec=
+github.com/libgit2/git2go/v31 v31.7.0 h1:uKyf7mGFLEgjxmN7Eh3Pdn5REzGR8eEOqL0P4DpE3Xw=
+github.com/libgit2/git2go/v31 v31.7.0/go.mod h1:c/rkJcBcUFx6wHaT++UwNpKvIsmPNqCeQ/vzO4DrEec=
 github.com/lucasb-eyer/go-colorful v1.0.3 h1:QIbQXiugsb+q10B+MI+7DI1oQLdmnep86tWFlaaUAac=
 github.com/lucasb-eyer/go-colorful v1.0.3/go.mod h1:R4dSotOR9KMtayYi1e77YzuveK+i7ruzyGqttikkLy0=
 github.com/magiconair/properties v1.8.1/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
