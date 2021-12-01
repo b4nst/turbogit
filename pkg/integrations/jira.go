@@ -5,7 +5,7 @@ import (
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/briandowns/spinner"
-	git "github.com/libgit2/git2go/v31"
+	git "github.com/libgit2/git2go/v33"
 )
 
 const (

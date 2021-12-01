@@ -3,7 +3,7 @@ package git
 import (
 	"os"
 
-	git2go "github.com/libgit2/git2go/v31"
+	git2go "github.com/libgit2/git2go/v33"
 )
 
 // Getrepo returns the repository in the current directory or an error.

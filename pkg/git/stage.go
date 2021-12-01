@@ -3,7 +3,7 @@ package git
 import (
 	"errors"
 
-	git "github.com/libgit2/git2go/v31"
+	git "github.com/libgit2/git2go/v33"
 )
 
 // StageReady returns true if the stage is ready to be committed. Otherwise it returns false if there is nothing to commit or an error.

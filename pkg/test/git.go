@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	git "github.com/libgit2/git2go/v31"
+	git "github.com/libgit2/git2go/v33"
 	"github.com/stretchr/testify/require"
 )
 
