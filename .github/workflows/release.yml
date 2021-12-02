@@ -50,7 +50,8 @@ jobs:
       - name: Get dependencies
         run: |
           sudo apt update
-          sudo apt install cmake
+          sudo apt install cmake ruby ruby-dev rubygems build-essential
+          sudo gem install --no-document fpm
           curl -L https://codeload.github.com/libgit2/libgit2/tar.gz/refs/tags/v1.3.0 | tar -xz
           mkdir -p libgit2-1.3.0/build
           cd libgit2-1.3.0/build
@@ -100,7 +101,8 @@ jobs:
       - name: Get dependencies
         run: |
           sudo apt update
-          sudo apt install cmake
+          sudo apt install cmake ruby ruby-dev rubygems build-essential
+          sudo gem install --no-document fpm
           curl -L https://codeload.github.com/libgit2/libgit2/tar.gz/refs/tags/v1.3.0 | tar -xz
           mkdir -p libgit2-1.3.0/build
           cd libgit2-1.3.0/build
@@ -150,7 +152,8 @@ jobs:
       - name: Get dependencies
         run: |
           sudo apt update
-          sudo apt install cmake
+          sudo apt install cmake ruby ruby-dev rubygems build-essential
+          sudo gem install --no-document fpm
           curl -L https://codeload.github.com/libgit2/libgit2/tar.gz/refs/tags/v1.3.0 | tar -xz
           mkdir -p libgit2-1.3.0/build
           cd libgit2-1.3.0/build
