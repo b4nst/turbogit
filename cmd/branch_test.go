@@ -44,6 +44,14 @@ func TestParseBranchCmd(t *testing.T) {
 		Repo:      r,
 	}
 	assert.Equal(t, expected, *bco)
+	// Users branch
+	bco, err = parseBranchCmd(cmd, []string{"users", "my", "branch"})
+	assert.NoError(t, err)
+	expected = BranchCmdOption{
+		NewBranch: format.TugBranch{Type: "users", Prefix: test.GIT_USERNAME, Description: "my branch"},
+		Repo:      r,
+	}
+	assert.Equal(t, expected, *bco)
 	// Classic branch
 	bco, err = parseBranchCmd(cmd, []string{"feat", "foo", "bar"})
 	assert.NoError(t, err)
