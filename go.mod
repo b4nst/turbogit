@@ -12,7 +12,7 @@ require (
 	github.com/imdario/mergo v0.3.12
 	github.com/kr/text v0.2.0 // indirect
 	github.com/ktr0731/go-fuzzyfinder v0.5.1
-	github.com/libgit2/git2go/v33 v33.0.4
+	github.com/libgit2/git2go/v33 v33.0.6
 	github.com/nsf/termbox-go v0.0.0-20201124104050-ed494de23a00
 	github.com/spf13/cobra v1.3.0
 	github.com/stretchr/testify v1.7.0
