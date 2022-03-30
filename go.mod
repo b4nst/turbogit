@@ -11,7 +11,7 @@ require (
 	github.com/hpcloud/golor v0.0.0-20150914221010-dc1b58c471a0
 	github.com/imdario/mergo v0.3.12
 	github.com/kr/text v0.2.0 // indirect
-	github.com/ktr0731/go-fuzzyfinder v0.5.1
+	github.com/ktr0731/go-fuzzyfinder v0.6.0
 	github.com/libgit2/git2go/v33 v33.0.9
 	github.com/nsf/termbox-go v0.0.0-20201124104050-ed494de23a00
 	github.com/spf13/cobra v1.3.0
