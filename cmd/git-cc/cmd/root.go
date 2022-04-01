@@ -1,5 +1,5 @@
 /*
-Copyright © 2020 banst
+Copyright © 2022 banst
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,21 +34,19 @@ import (
 )
 
 func init() {
-	RootCmd.AddCommand(commitCmd)
-
-	commitCmd.Flags().StringP("type", "t", "", fmt.Sprintf("Commit types %s", format.AllCommitType()))
-	commitCmd.RegisterFlagCompletionFunc("type", typeFlagCompletion)
-	commitCmd.Flags().BoolP("breaking-changes", "c", false, "Commit contains breaking changes")
-	commitCmd.Flags().BoolP("edit", "e", false, "Prompt editor to edit your message (add body or/and footer(s))")
-	commitCmd.Flags().StringP("scope", "s", "", "Add a scope")
-	commitCmd.Flags().BoolP("amend", "a", false, "Amend commit")
+	rootCmd.Flags().StringP("type", "t", "", fmt.Sprintf("Commit types %s", format.AllCommitType()))
+	rootCmd.RegisterFlagCompletionFunc("type", typeFlagCompletion)
+	rootCmd.Flags().BoolP("breaking-changes", "c", false, "Commit contains breaking changes")
+	rootCmd.Flags().BoolP("edit", "e", false, "Prompt editor to edit your message (add body or/and footer(s))")
+	rootCmd.Flags().StringP("scope", "s", "", "Add a scope")
+	rootCmd.Flags().BoolP("amend", "a", false, "Amend commit")
 }
 
 func typeFlagCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	return format.AllCommitType(), cobra.ShellCompDirectiveDefault
 }
 
-type CommitCmdOption struct {
+type option struct {
 	// Commit type
 	CType format.CommitType
 	// True if this commit introduces breaking changes
@@ -65,24 +63,25 @@ type CommitCmdOption struct {
 	Repo *git.Repository
 }
 
-// commitCmd represents the commit command
-var commitCmd = &cobra.Command{
-	Use:                   "commit [type] [subject]",
-	Aliases:               []string{"c"},
-	Short:                 "Commit staging area",
-	DisableFlagsInUseLine: true,
+var rootCmd = &cobra.Command{
+	Use:   "git-cc [type] [subject]",
+	Short: "Commit using conventional commit message",
+	// DisableFlagsInUseLine: true,
 	Example: `
 # Commit a new feature (feat: a new feature)
-$ tug commit feat a new feature
+$ git cc feat a new feature
 
 # Commit a fix that brings breaking changes (fix!: API break)
-$ tug commit fix -c API break
+$ git cc fix -c API break
 
 # Add a scope to the commit (refactor(scope): a scopped refactor)
-$ tug commit refactor a scopped refactor -s scope
+$ git cc refactor a scopped refactor -s scope
 
 # Open your editor to edit the commit message
-$ tug commit ci -e message
+$ git cc ci -e message
+
+# Ammend last commit type
+$ git cc -a -t fix
 	`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		amend, _ := cmd.Flags().GetBool("amend")
@@ -99,9 +98,9 @@ $ tug commit ci -e message
 		}
 		return nil
 	},
-	SilenceUsage: true,
-	ValidArgs:    format.AllCommitType(),
-	Run:          runCommitCmd,
+	// SilenceUsage: true,
+	ValidArgs: format.AllCommitType(),
+	Run:       runCommitCmd,
 }
 
 func runCommitCmd(cmd *cobra.Command, args []string) {
@@ -115,7 +114,7 @@ func runCommitCmd(cmd *cobra.Command, args []string) {
 	}
 }
 
-func parseCommitCmd(cmd *cobra.Command, args []string) (*CommitCmdOption, error) {
+func parseCommitCmd(cmd *cobra.Command, args []string) (*option, error) {
 	// --type
 	fType, err := cmd.Flags().GetString("type")
 	if err != nil {
@@ -160,7 +159,7 @@ func parseCommitCmd(cmd *cobra.Command, args []string) (*CommitCmdOption, error)
 		return nil, err
 	}
 
-	return &CommitCmdOption{
+	return &option{
 		CType:           ctype,
 		BreakingChanges: fBreakingChanges,
 		Message:         strings.Join(args, " "),
@@ -171,7 +170,7 @@ func parseCommitCmd(cmd *cobra.Command, args []string) (*CommitCmdOption, error)
 	}, nil
 }
 
-func runCommit(cco *CommitCmdOption) error {
+func runCommit(cco *option) error {
 	var ca *git.Commit
 	if cco.Amend {
 		o, err := cco.Repo.RevparseSingle("HEAD")
