@@ -1,5 +1,5 @@
 /*
-Copyright © 2020 banst
+Copyright © 2022 banst
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,43 +34,39 @@ import (
 )
 
 func init() {
-	RootCmd.AddCommand(checkCmd)
-
-	checkCmd.Flags().BoolP("all", "a", false, "Check all the commits in refs/*, along with HEAD")
-	checkCmd.Flags().StringP("from", "f", "HEAD", "Commit to start from. Can be a hash or any revision as accepted by rev parse.")
+	rootCmd.Flags().BoolP("all", "a", false, "Check all the commits in refs/*, along with HEAD")
+	rootCmd.Flags().StringP("from", "f", "HEAD", "Commit to start from. Can be a hash or any revision as accepted by rev parse.")
 }
 
-type CheckCmdOption struct {
+type option struct {
 	All  bool
 	From string
 	Repo *git.Repository
 }
 
-var checkCmd = &cobra.Command{
-	Use:                   "check",
-	Short:                 "Check the history to follow conventional commit",
-	DisableFlagsInUseLine: true,
+var rootCmd = &cobra.Command{
+	Use:   "git-check",
+	Short: "Check the history to follow conventional commit",
 	Example: `
 # Check if all is ok
-$ tug check
+$ git check
 `,
-	Args:         cobra.NoArgs,
-	SilenceUsage: true,
-	Run:          runCheckCmd,
+	Args: cobra.NoArgs,
+	Run:  runCmd,
 }
 
-func runCheckCmd(cmd *cobra.Command, args []string) {
-	cco, err := parseCheckCmd(cmd, args)
+func runCmd(cmd *cobra.Command, args []string) {
+	opt, err := parseCmd(cmd, args)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = runCheck(cco)
+	err = run(opt)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func parseCheckCmd(cmd *cobra.Command, args []string) (*CheckCmdOption, error) {
+func parseCmd(cmd *cobra.Command, args []string) (*option, error) {
 	// --all
 	fAll, err := cmd.Flags().GetBool("all")
 	if err != nil {
@@ -88,26 +84,26 @@ func parseCheckCmd(cmd *cobra.Command, args []string) (*CheckCmdOption, error) {
 		return nil, err
 	}
 
-	return &CheckCmdOption{
+	return &option{
 		All:  fAll,
 		From: fFrom,
 		Repo: repo,
 	}, nil
 }
 
-func runCheck(cco *CheckCmdOption) error {
-	r := cco.Repo
+func run(opt *option) error {
+	r := opt.Repo
 
 	walk, err := r.Walk()
 	if err != nil {
 		return err
 	}
-	if cco.All {
+	if opt.All {
 		if err := walk.PushGlob("refs/*"); err != nil {
 			return err
 		}
 	} else {
-		from, err := r.RevparseSingle(cco.From)
+		from, err := r.RevparseSingle(opt.From)
 		if err != nil {
 			return err
 		}
