@@ -1,5 +1,5 @@
 /*
-Copyright © 2020 banst
+Copyright © 2022 banst
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -38,21 +38,19 @@ import (
 )
 
 func init() {
-	RootCmd.AddCommand(logCmd)
-
-	logCmd.Flags().BoolP("all", "a", false, "Pretend as if all the refs in refs/, along with HEAD, are listed on the command line as <commit>. If set on true, the --from option will be ignored.")
-	logCmd.Flags().Bool("no-color", false, "Disable color output")
-	logCmd.Flags().StringP("from", "f", "HEAD", "Logs only commits reachable from this one")
-	logCmd.Flags().String("since", "", "Show commits more recent than a specific date")
-	logCmd.Flags().String("until", "", "Show commits older than a specific date")
+	rootCmd.Flags().BoolP("all", "a", false, "Pretend as if all the refs in refs/, along with HEAD, are listed on the command line as <commit>. If set on true, the --from option will be ignored.")
+	rootCmd.Flags().Bool("no-color", false, "Disable color output")
+	rootCmd.Flags().StringP("from", "f", "HEAD", "Logs only commits reachable from this one")
+	rootCmd.Flags().String("since", "", "Show commits more recent than a specific date")
+	rootCmd.Flags().String("until", "", "Show commits older than a specific date")
 	// logCmd.Flags().String("path", "", "Filter commits based on the path of files that are updated. Accept regexp")
 	// Filters
-	logCmd.Flags().StringArrayP("type", "t", []string{}, "Filter commits by type (repeatable option)")
-	logCmd.Flags().StringArrayP("scope", "s", []string{}, "Filter commits by scope (repeatable option)")
-	logCmd.Flags().BoolP("breaking-changes", "c", false, "Only shows breaking changes")
+	rootCmd.Flags().StringArrayP("type", "t", []string{}, "Filter commits by type (repeatable option)")
+	rootCmd.Flags().StringArrayP("scope", "s", []string{}, "Filter commits by scope (repeatable option)")
+	rootCmd.Flags().BoolP("breaking-changes", "c", false, "Only shows breaking changes")
 }
 
-type LogCmdOption struct {
+type option struct {
 	All            bool
 	NoColor        bool
 	From           string
@@ -64,27 +62,25 @@ type LogCmdOption struct {
 	Repo           *git.Repository
 }
 
-// logCmd represents the log command
-var logCmd = &cobra.Command{
-	Use:                   "log",
-	Short:                 "Shows the commit logs.",
-	DisableFlagsInUseLine: true,
-	SilenceUsage:          true,
-	Args:                  cobra.NoArgs,
-	Run:                   runLogCmd,
+// rootCmd represents the log command
+var rootCmd = &cobra.Command{
+	Use:   "git-logs",
+	Short: "Shows the commit logs.",
+	Args:  cobra.NoArgs,
+	Run:   runCmd,
 }
 
-func runLogCmd(cmd *cobra.Command, args []string) {
-	lco, err := parseLogCmd(cmd, args)
+func runCmd(cmd *cobra.Command, args []string) {
+	opt, err := parseCmd(cmd, args)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := runLog(lco); err != nil {
+	if err := run(opt); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func parseLogCmd(cmd *cobra.Command, args []string) (*LogCmdOption, error) {
+func parseCmd(cmd *cobra.Command, args []string) (*option, error) {
 	// --all
 	fAll, err := cmd.Flags().GetBool("all")
 	if err != nil {
@@ -154,7 +150,7 @@ func parseLogCmd(cmd *cobra.Command, args []string) (*LogCmdOption, error) {
 		return nil, err
 	}
 
-	return &LogCmdOption{
+	return &option{
 		All:            fAll,
 		NoColor:        fNoColor,
 		From:           fFrom,
@@ -167,19 +163,19 @@ func parseLogCmd(cmd *cobra.Command, args []string) (*LogCmdOption, error) {
 	}, nil
 }
 
-func runLog(lco *LogCmdOption) error {
-	r := lco.Repo
+func run(opt *option) error {
+	r := opt.Repo
 
 	walk, err := r.Walk()
 	if err != nil {
 		return err
 	}
-	if lco.All {
+	if opt.All {
 		if err := walk.PushGlob("refs/*"); err != nil {
 			return err
 		}
 	} else {
-		from, err := r.RevparseSingle(lco.From)
+		from, err := r.RevparseSingle(opt.From)
 		if err != nil {
 			return err
 		}
@@ -190,32 +186,32 @@ func runLog(lco *LogCmdOption) error {
 
 	// Build filters
 	filters := []LogFilter{}
-	if lco.Since != nil {
+	if opt.Since != nil {
 		filters = append(filters, func(c *git.Commit, co *format.CommitMessageOption) (p, continueWalk bool) {
 			d := c.Committer().When
-			if d.Before(*lco.Since) {
+			if d.Before(*opt.Since) {
 				return false, false
 			}
 			return true, true
 		})
 	}
-	if lco.Until != nil {
+	if opt.Until != nil {
 		filters = append(filters, func(c *git.Commit, co *format.CommitMessageOption) (p, continueWalk bool) {
 			d := c.Committer().When
-			if d.After(*lco.Until) {
+			if d.After(*opt.Until) {
 				return false, true
 			}
 			return true, true
 		})
 	}
-	if lco.BreakingChange {
+	if opt.BreakingChange {
 		filters = append(filters, func(c *git.Commit, co *format.CommitMessageOption) (p, continueWalk bool) {
 			return co.BreakingChanges, true
 		})
 	}
-	if len(lco.Types) > 0 {
+	if len(opt.Types) > 0 {
 		filters = append(filters, func(c *git.Commit, co *format.CommitMessageOption) (p, continueWalk bool) {
-			for _, t := range lco.Types {
+			for _, t := range opt.Types {
 				if co.Ctype == t {
 					return true, true
 				}
@@ -223,9 +219,9 @@ func runLog(lco *LogCmdOption) error {
 			return false, true
 		})
 	}
-	if len(lco.Scopes) > 0 {
+	if len(opt.Scopes) > 0 {
 		filters = append(filters, func(c *git.Commit, co *format.CommitMessageOption) (p, continueWalk bool) {
-			for _, s := range lco.Scopes {
+			for _, s := range opt.Scopes {
 				if co.Scope == s {
 					return true, true
 				}
@@ -236,7 +232,7 @@ func runLog(lco *LogCmdOption) error {
 	// Writer
 	w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, ' ', 0)
 
-	if err := walk.Iterate(buildLogWalker(w, !lco.NoColor, filters)); err != nil {
+	if err := walk.Iterate(buildLogWalker(w, !opt.NoColor, filters)); err != nil {
 		return err
 	}
 
