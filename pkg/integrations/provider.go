@@ -1,7 +1,10 @@
 package integrations
 
 import (
-	git "github.com/libgit2/git2go/v33"
+	"fmt"
+
+	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 )
 
 // Provider interface abstracts cross-platform providers
@@ -11,15 +14,17 @@ type Provider interface {
 }
 
 func ProvidersFrom(r *git.Repository) ([]Provider, error) {
-	c, err := r.Config()
+	// c, err := config.LoadConfig(config.GlobalScope)
+	c, err := r.ConfigScoped(config.GlobalScope)
 	if err != nil {
 		return nil, err
 	}
 
+	fmt.Println("Jira section", c.Raw.Section("jira").Options.GoString())
 	var p []Provider
 
 	// Jira
-	jp, err := jiraProvider(c)
+	jp, err := jiraProvider(c.Raw)
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +33,7 @@ func ProvidersFrom(r *git.Repository) ([]Provider, error) {
 	}
 
 	// Gitlab
-	glp, err := NewGitLabProvider(r)
+	glp, err := NewGitLabProvider(c)
 	if err != nil {
 		return nil, err
 	}
