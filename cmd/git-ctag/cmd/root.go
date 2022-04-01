@@ -1,5 +1,5 @@
 /*
-Copyright © 2020 banst
+Copyright © 2022 banst
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,45 +36,41 @@ import (
 )
 
 func init() {
-	RootCmd.AddCommand(tagCmd)
-
-	tagCmd.Flags().BoolP("dry-run", "d", false, "Do not tag.")
-	tagCmd.Flags().StringP("prefix", "p", "v", "Tag prefix.")
+	rootCmd.Flags().BoolP("dry-run", "d", false, "Do not tag.")
+	rootCmd.Flags().StringP("prefix", "p", "v", "Tag prefix.")
 }
 
-type TagCmdOption struct {
+type option struct {
 	DryRun bool
 	Prefix string
 	Repo   *git.Repository
 }
 
-var tagCmd = &cobra.Command{
-	Use:                   "tag",
-	Short:                 "Create a tag",
-	DisableFlagsInUseLine: true,
-	Aliases:               []string{"release"},
-	Long:                  "Create a semver tag, based on the commit history since last one",
+// rootCmd represents the base command when called without any subcommands
+var rootCmd = &cobra.Command{
+	Use:   "git-ctag",
+	Short: "Create a SemVer tag based on the commit history.",
 	Example: `
 # Given that the last release tag was v1.0.0, some feature were committed but no breaking changes.
 # The following command will create the tag v1.1.0
-$ tug tag
+$ git ctag
 `,
 	Args:         cobra.NoArgs,
 	SilenceUsage: true,
-	Run:          runTagCmd,
+	Run:          runCmd,
 }
 
-func runTagCmd(cmd *cobra.Command, args []string) {
-	tco, err := parseTagCmd(cmd, args)
+func runCmd(cmd *cobra.Command, args []string) {
+	tco, err := parseOptions(cmd, args)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := runTag(tco); err != nil {
+	if err := run(tco); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func parseTagCmd(cmd *cobra.Command, args []string) (*TagCmdOption, error) {
+func parseOptions(cmd *cobra.Command, args []string) (*option, error) {
 	// --dry-run
 	fDryRun, err := cmd.Flags().GetBool("dry-run")
 	if err != nil {
@@ -93,11 +89,45 @@ func parseTagCmd(cmd *cobra.Command, args []string) (*TagCmdOption, error) {
 		return nil, err
 	}
 
-	return &TagCmdOption{
+	return &option{
 		DryRun: fDryRun,
 		Prefix: fPrefix,
 		Repo:   repo,
 	}, nil
+}
+
+func run(tco *option) error {
+	r := tco.Repo
+
+	walk, err := r.Walk()
+	if err != nil {
+		return err
+	}
+	if err := walk.PushHead(); err != nil {
+		return err
+	}
+
+	bump := format.BUMP_NONE
+	curr := semver.Version{}
+	walker, err := commitWalker(&bump, &curr, tco.Prefix)
+	if err != nil {
+		return err
+	}
+	if err := walk.Iterate(walker); err != nil {
+		return err
+	}
+
+	if bump == format.BUMP_NONE {
+		fmt.Println("Nothing to do")
+		return nil
+	}
+	// Bump tag
+	if err := bumpVersion(&curr, bump); err != nil {
+		return err
+	}
+
+	tagname := fmt.Sprintf("refs/tags/%s%s", tco.Prefix, curr)
+	return tagHead(r, tagname, tco.DryRun)
 }
 
 func commitWalker(bump *format.Bump, curr *semver.Version, prefix string) (func(*git.Commit) bool, error) {
@@ -134,40 +164,6 @@ func commitWalker(bump *format.Bump, curr *semver.Version, prefix string) (func(
 		*bump = format.NextBump(c.Message(), *bump)
 		return true
 	}, nil
-}
-
-func runTag(tco *TagCmdOption) error {
-	r := tco.Repo
-
-	walk, err := r.Walk()
-	if err != nil {
-		return err
-	}
-	if err := walk.PushHead(); err != nil {
-		return err
-	}
-
-	bump := format.BUMP_NONE
-	curr := semver.Version{}
-	walker, err := commitWalker(&bump, &curr, tco.Prefix)
-	if err != nil {
-		return err
-	}
-	if err := walk.Iterate(walker); err != nil {
-		return err
-	}
-
-	if bump == format.BUMP_NONE {
-		fmt.Println("Nothing to do")
-		return nil
-	}
-	// Bump tag
-	if err := bumpVersion(&curr, bump); err != nil {
-		return err
-	}
-
-	tagname := fmt.Sprintf("refs/tags/%s%s", tco.Prefix, curr)
-	return tagHead(r, tagname, tco.DryRun)
 }
 
 func tagHead(r *git.Repository, tagname string, dry bool) error {

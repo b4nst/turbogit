@@ -1,6 +1,6 @@
 # Build config
 PLUGIN_DIRS = $(sort $(dir $(wildcard cmd/*/*)))
-PLUGIN_BINS = $(PLUGIN_DIRS:cmd/%/=%)
+PLUGIN_BINS = $(addprefix bin/, $(PLUGIN_DIRS:cmd/%/=%))
 BUILD_FILES = $(shell go list -f '{{range .GoFiles}}{{$$.Dir}}/{{.}} {{end}}' ./...)
 
 # Go config
@@ -10,10 +10,10 @@ GOTEST=$(GOCMD) test
 GORUN=$(GOCMD) run
 LDFLAGS = -s -w
 
-bin/$(PLUGIN_BINS): $(BUILD_FILES)
+$(PLUGIN_BINS): $(BUILD_FILES)
 	$(GOBUILD) -trimpath -o "$@" -ldflags='$(LDFLAGS)' cmd/$(@F)/main.go
 
-build: bin/$(PLUGIN_BINS)
+build: $(PLUGIN_BINS)
 .PHONY: build
 
 test: $(BUILD_FILES)
