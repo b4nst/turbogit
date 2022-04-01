@@ -1,5 +1,5 @@
 /*
-Copyright © 2020 banst
+Copyright © 2022 banst
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,38 +29,27 @@ import (
 	"github.com/b4nst/turbogit/pkg/format"
 	tugit "github.com/b4nst/turbogit/pkg/git"
 	"github.com/b4nst/turbogit/pkg/integrations"
-
 	git "github.com/libgit2/git2go/v33"
 	"github.com/spf13/cobra"
 )
 
-func init() {
-	RootCmd.AddCommand(branchCmd)
-}
-
-type BranchCmdOption struct {
-	NewBranch format.TugBranch
-	Repo      *git.Repository
-}
-
-var branchCmd = &cobra.Command{
-	Use:                   "branch [type] [description]",
-	Aliases:               []string{"b"},
-	Short:                 "Create a new branch",
-	DisableFlagsInUseLine: true,
+// rootCmd represents the base command when called without any subcommands
+var rootCmd = &cobra.Command{
+	Use:   "git-new [type] [description]",
+	Short: "Start a new branch.",
 	Long: `
 If you don't give any argument, the command will look for issue in pre-configured issues provider.
 The issue ID will be used as a prefix.
 If type=user(s), a prefix with your git username will be added to the branch name.
 	`,
 	Example: `
-# Create branch feat/my-feature from current branch
-$ tug branch feat my feature
+# Start new feature feat/my-feature from current branch
+$ git new feat my feature
 
-# Create branch user/alice/my-branch, given that alice is your git username
+# Start working on a user branch (my-branch). This will create user/alice/my-branch, given that alice is your git username
 $ tug branch user my branch
 
-# Look for an issue provider, prompt for issue and create a branch from there
+# Start working on a new issue (an issue provider must be configured on the repositoty)
 $ tug branch
 	`,
 	Args: func(cmd *cobra.Command, args []string) error {
@@ -69,44 +58,26 @@ $ tug branch
 		}
 		return nil
 	},
-	SilenceUsage: true,
-	Run:          runBranchCmd,
+	Run: runCmd,
 }
 
-func runBranchCmd(cmd *cobra.Command, args []string) {
-	bco, err := parseBranchCmd(cmd, args)
+type option struct {
+	NewBranch format.TugBranch
+	Repo      *git.Repository
+}
+
+func runCmd(cmd *cobra.Command, args []string) {
+	bco, err := parseCmd(cmd, args)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = runBranch(bco)
+	err = run(bco)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func promptProviderBranch(repo *git.Repository) (nb format.TugBranch, err error) {
-	providers, err := integrations.ProvidersFrom(repo)
-	if err != nil {
-		return nb, err
-	}
-	issues := []integrations.IssueDescription{}
-	for _, p := range providers {
-		// TODO concurrent search
-		pIssues, err := p.Search()
-		if err != nil {
-			return nb, err
-		}
-		issues = append(issues, pIssues...)
-	}
-	issue, err := integrations.SelectIssue(issues, false)
-	if err != nil {
-		return nb, err
-	}
-
-	return issue.ToBranch(format.DefaultTypeRewrite), nil
-}
-
-func parseBranchCmd(cmd *cobra.Command, args []string) (*BranchCmdOption, error) {
+func parseCmd(cmd *cobra.Command, args []string) (*option, error) {
 	// Find repo
 	repo, err := tugit.Getrepo()
 	if err != nil {
@@ -140,14 +111,14 @@ func parseBranchCmd(cmd *cobra.Command, args []string) (*BranchCmdOption, error)
 		nb.Prefix = username
 	}
 
-	return &BranchCmdOption{
+	return &option{
 		NewBranch: nb,
 		Repo:      repo,
 	}, nil
 }
 
-func runBranch(bco *BranchCmdOption) error {
-	r := bco.Repo
+func run(opt *option) error {
+	r := opt.Repo
 
 	var t *git.Commit = nil
 	head, err := r.Head()
@@ -162,7 +133,7 @@ func runBranch(bco *BranchCmdOption) error {
 	}
 
 	// Create new branch
-	b, err := r.CreateBranch(bco.NewBranch.String(), t, false)
+	b, err := r.CreateBranch(opt.NewBranch.String(), t, false)
 	if err != nil {
 		return err
 	}
@@ -182,4 +153,26 @@ func runBranch(bco *BranchCmdOption) error {
 	}
 	err = r.SetHead(b.Reference.Name())
 	return err
+}
+
+func promptProviderBranch(repo *git.Repository) (nb format.TugBranch, err error) {
+	providers, err := integrations.ProvidersFrom(repo)
+	if err != nil {
+		return nb, err
+	}
+	issues := []integrations.IssueDescription{}
+	for _, p := range providers {
+		// TODO concurrent search
+		pIssues, err := p.Search()
+		if err != nil {
+			return nb, err
+		}
+		issues = append(issues, pIssues...)
+	}
+	issue, err := integrations.SelectIssue(issues, false)
+	if err != nil {
+		return nb, err
+	}
+
+	return issue.ToBranch(format.DefaultTypeRewrite), nil
 }

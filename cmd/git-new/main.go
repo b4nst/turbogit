@@ -1,5 +1,5 @@
 /*
-Copyright © 2020 banst
+Copyright © 2022 banst
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,36 +19,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package cmd
+package main
 
-import (
-	"fmt"
-	"os"
-	"runtime"
-	"text/tabwriter"
+import "github.com/b4nst/turbogit/cmd/git-new/cmd"
 
-	"github.com/spf13/cobra"
-)
-
-func init() {
-	RootCmd.AddCommand(versionCmd)
-}
-
-// versionCmd represents the version command
-var versionCmd = &cobra.Command{
-	Use:                   "version",
-	Short:                 "Print current version",
-	DisableFlagsInUseLine: true,
-	Run:                   runVersion,
-}
-
-func runVersion(cmd *cobra.Command, args []string) {
-	w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, '\t', tabwriter.AlignRight)
-	defer w.Flush()
-
-	fmt.Fprintf(w, "%s\t%s\t", "Version:", Version)
-	fmt.Fprintf(w, "\n%s\t%s\t", "Go version:", runtime.Version())
-	fmt.Fprintf(w, "\n%s\t%s\t", "Git commit:", Commit)
-	fmt.Fprintf(w, "\n%s\t%s\t", "Built:", BuildDate)
-	fmt.Fprintf(w, "\n%s\t%s/%s\t", "OS/Arch:", runtime.GOOS, runtime.GOARCH)
+func main() {
+	cmd.Execute()
 }
