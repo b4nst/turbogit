@@ -1,23 +1,19 @@
-# Go parameters
+# Build config
+PLUGIN_DIRS = $(sort $(dir $(wildcard cmd/*/*)))
+PLUGIN_BINS = $(PLUGIN_DIRS:cmd/%/=%)
+BUILD_FILES = $(shell go list -f '{{range .GoFiles}}{{$$.Dir}}/{{.}} {{end}}' ./...)
+
+# Go config
 GOCMD=go
 GOBUILD=$(GOCMD) build
 GOTEST=$(GOCMD) test
 GORUN=$(GOCMD) run
-
-BUILD_FILES = $(shell go list -f '{{range .GoFiles}}{{$$.Dir}}/{{.}} {{end}}' ./...)
-
-DATE=$(shell date -u "+%a %b %d %T %Y")
-TUG_COMMIT ?= $(shell git rev-parse --short HEAD)
-TUG_VERSION ?= dev
-
 LDFLAGS = -s -w
-LDFLAGS += -X "github.com/b4nst/turbogit/cmd.BuildDate=$(DATE)"
-LDFLAGS += -X "github.com/b4nst/turbogit/cmd.Commit=$(TUG_COMMIT)"
-LDFLAGS += -X "github.com/b4nst/turbogit/cmd.Version=$(TUG_VERSION)"
 
-bin/tug: $(BUILD_FILES)
-	$(GOBUILD) -trimpath -o "$@" -ldflags='$(LDFLAGS)' ./main.go 
-build: bin/tug
+bin/$(PLUGIN_BINS): $(BUILD_FILES)
+	$(GOBUILD) -trimpath -o "$@" -ldflags='$(LDFLAGS)' cmd/$(@F)/main.go
+
+build: bin/$(PLUGIN_BINS)
 .PHONY: build
 
 test: $(BUILD_FILES)

@@ -48,7 +48,6 @@ func init() {
 	// logCmd.Flags().String("path", "", "Filter commits based on the path of files that are updated. Accept regexp")
 	// Filters
 	logCmd.Flags().StringArrayP("type", "t", []string{}, "Filter commits by type (repeatable option)")
-	commitCmd.RegisterFlagCompletionFunc("type", typeFlagCompletion)
 	logCmd.Flags().StringArrayP("scope", "s", []string{}, "Filter commits by scope (repeatable option)")
 	logCmd.Flags().BoolP("breaking-changes", "c", false, "Only shows breaking changes")
 }
