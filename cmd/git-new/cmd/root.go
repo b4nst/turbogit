@@ -27,9 +27,9 @@ import (
 	"strings"
 
 	"github.com/b4nst/turbogit/pkg/format"
-	tugit "github.com/b4nst/turbogit/pkg/git"
 	"github.com/b4nst/turbogit/pkg/integrations"
-	git "github.com/libgit2/git2go/v33"
+	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/spf13/cobra"
 )
 
@@ -79,7 +79,10 @@ func runCmd(cmd *cobra.Command, args []string) {
 
 func parseCmd(cmd *cobra.Command, args []string) (*option, error) {
 	// Find repo
-	repo, err := tugit.Getrepo()
+	repo, err := git.PlainOpenWithOptions("", &git.PlainOpenOptions{
+		DetectDotGit:          true,
+		EnableDotGitCommonDir: true,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +107,7 @@ func parseCmd(cmd *cobra.Command, args []string) (*option, error) {
 		if err != nil {
 			return nil, err
 		}
-		username, _ := config.LookupString("user.name")
+		username := config.User.Name
 		if username == "" {
 			return nil, errors.New("You need to configure your username before creating a user branch.")
 		}
@@ -119,40 +122,16 @@ func parseCmd(cmd *cobra.Command, args []string) (*option, error) {
 
 func run(opt *option) error {
 	r := opt.Repo
-
-	var t *git.Commit = nil
-	head, err := r.Head()
-	if err == nil {
-		t, err = r.LookupCommit(head.Target())
-		if err != nil {
-			return err
-		}
-	}
-	if t == nil {
-		return errors.New("No commit to create branch from, please create the initial commit")
-	}
-
-	// Create new branch
-	b, err := r.CreateBranch(opt.NewBranch.String(), t, false)
-	if err != nil {
-		return err
-	}
-	bc, err := r.LookupCommit(b.Target())
-	if err != nil {
-		return err
-	}
-	tree, err := r.LookupTree(bc.TreeId())
+	w, err := r.Worktree()
 	if err != nil {
 		return err
 	}
 
-	// Checkout the branch
-	err = r.CheckoutTree(tree, &git.CheckoutOpts{Strategy: git.CheckoutSafe})
-	if err != nil {
-		return err
-	}
-	err = r.SetHead(b.Reference.Name())
-	return err
+	return w.Checkout(&git.CheckoutOptions{
+		Branch: plumbing.NewBranchReferenceName(opt.NewBranch.String()),
+		Create: true,
+		Keep:   true,
+	})
 }
 
 func promptProviderBranch(repo *git.Repository) (nb format.TugBranch, err error) {

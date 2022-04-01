@@ -3,10 +3,12 @@ package integrations
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 
-	tugit "github.com/b4nst/turbogit/pkg/git"
-	git "github.com/libgit2/git2go/v33"
+	"github.com/go-git/go-git/v5/config"
+	fconfig "github.com/go-git/go-git/v5/plumbing/format/config"
+	gurl "github.com/whilp/git-urls"
 	"github.com/xanzy/go-gitlab"
 )
 
@@ -45,31 +47,25 @@ func (glp GitLabProvider) Search() ([]IssueDescription, error) {
 	return res, nil
 }
 
-func NewGitLabProvider(r *git.Repository) (*GitLabProvider, error) {
-	c, err := r.Config()
-	if err != nil {
-		return nil, err
-	}
-	enabled, err := c.LookupBool("gitlab.enabled")
+func NewGitLabProvider(c *config.Config) (*GitLabProvider, error) {
+	s := c.Raw.Section("gitlab")
+	enabled, err := strconv.ParseBool(s.Option("enabled"))
 	if err == nil && !enabled {
 		return nil, nil
 	}
-	remote, err := tugit.ParseRemote(r, "origin", true)
+	remote, err := gurl.Parse(c.Remotes["origin"].URLs[0]) // TODO deal with no origin repo
 	if err != nil {
 		return nil, err
 	}
-	if !isGitLabRemote(remote, c) {
+	if !isGitLabRemote(remote, s) {
 		if enabled {
 			return nil, fmt.Errorf("GitLab provider is enabled but %s is not a known gitlab host. Please add it to gitlab.hosts config or disable GitLab provider for this repository", remote.Hostname())
 		}
 		return nil, nil
 	}
-	token, err := c.LookupString("gitlab.token")
-	if err != nil {
-		return nil, err
-	}
-	protocol, err := c.LookupString("gitlab.protocol")
-	if err != nil {
+	token := s.Option("token")
+	protocol := s.Option("protocol")
+	if protocol == "" {
 		protocol = GITLAB_DEFAULT_PROTOCOL
 	}
 	baseUrl := protocol + "://" + remote.Host
@@ -83,11 +79,8 @@ func NewGitLabProvider(r *git.Repository) (*GitLabProvider, error) {
 	return &GitLabProvider{client: client, project: project}, nil
 }
 
-func isGitLabRemote(remote *url.URL, c *git.Config) bool {
-	hosts := []string{GITLAB_CLOUD_HOST}
-	if rhosts, err := c.LookupString("gitlab.hosts"); err == nil {
-		hosts = append(hosts, strings.Split(rhosts, ",")...)
-	}
+func isGitLabRemote(remote *url.URL, s *fconfig.Section) bool {
+	hosts := append([]string{GITLAB_CLOUD_HOST}, strings.Split(s.Option("hosts"), ",")...)
 	remoteHost := remote.Hostname()
 	for _, h := range hosts {
 		if h == remoteHost {
