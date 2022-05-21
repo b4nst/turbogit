@@ -5,10 +5,10 @@ BUILD_FILES = $(shell go list -f '{{range .GoFiles}}{{$$.Dir}}/{{.}} {{end}}' ./
 
 # Go config
 LDFLAGS=-s -w
-BUILD_ARGS=-trimpath -mod=readonly -tags=static -ldflags='$(LDFLAGS)'
+BUILD_ARGS=-trimpath -tags=static -ldflags='$(LDFLAGS)'
 GOCMD=go
 GOBUILD=$(GOCMD) build $(BUILD_ARGS)
-GOTEST=$(GOCMD) test
+GOTEST=$(GOCMD) test -tags=static
 GORUN=$(GOCMD) run
 
 $(PLUGIN_BINS): $(BUILD_FILES)
