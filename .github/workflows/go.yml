@@ -11,9 +11,34 @@ jobs:
     name: Build and test
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+        os:
+          - ubuntu
+          - macos
+          # TODO: https://github.com/b4nst/turbogit/issues/48
+          # - windows
+        include:
+          # - os: windows
+          #   shell: msys2 {0}
+          - os: ubuntu
+            shell: bash
+          - os: macos
+            shell: bash
+    runs-on: ${{ matrix.os }}-latest
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
     steps:
+      - name: Install windows dependencies
+        uses: msys2/setup-msys2@v2
+        if: matrix.os == 'windows'
+        with:
+          update: true
+          msystem: CLANG64
+          install: >-
+            pkg-config
+            make
+          path-type: inherit
+
       - name: Set up Go 1.x
         uses: actions/setup-go@v2
         with:
@@ -29,18 +54,18 @@ jobs:
         run: make build
 
       - name: Download codeclimate reporter
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu'
         run: wget -O cc-reporter https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 && chmod +x cc-reporter
 
       - name: Prepare code coverage
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu'
         run: ./cc-reporter before-build
 
       - name: Test
         run: make test
 
       - name: Upload code coverage
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu'
         env:
           CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
         run: ./cc-reporter after-build --coverage-input-type gocov -p github.com/b4nst/turbogit
