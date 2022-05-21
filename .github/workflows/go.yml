@@ -7,98 +7,40 @@ on:
     branches: [main]
 
 jobs:
-  build_linux:
-    name: Build Linux
-    runs-on: ubuntu-latest
+  go:
+    name: Build and test
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Set up Go 1.x
         uses: actions/setup-go@v2
         with:
-          go-version: ^1.16
+          go-version: ^1.17
         id: go
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
-
-      - name: Get dependencies
-        run: |
-          sudo apt update
-          sudo apt install cmake
-          curl -L https://codeload.github.com/libgit2/libgit2/tar.gz/refs/tags/v1.3.0 | tar -xz
-          mkdir -p libgit2-1.3.0/build
-          cd libgit2-1.3.0/build
-          cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_CLAR=OFF
-          sudo cmake --build . --target install
-          cd -
-          rm -rf libgit2-1.3.0
-          go get -v -t -d ./...
-          if [ -f Gopkg.toml ]; then
-              curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-              dep ensure
-          fi
+        with:
+          submodules: recursive
 
       - name: Build
         run: make build
 
       - name: Download codeclimate reporter
+        if: matrix.os == 'ubuntu-latest'
         run: wget -O cc-reporter https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 && chmod +x cc-reporter
 
       - name: Prepare code coverage
+        if: matrix.os == 'ubuntu-latest'
         run: ./cc-reporter before-build
 
       - name: Test
         run: make test
 
       - name: Upload code coverage
+        if: matrix.os == 'ubuntu-latest'
         env:
           CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
         run: ./cc-reporter after-build --coverage-input-type gocov -p github.com/b4nst/turbogit
-  build_macos:
-    name: Build macOS
-    runs-on: macos-latest
-    steps:
-      - name: Set up Go 1.x
-        uses: actions/setup-go@v2
-        with:
-          go-version: ^1.16
-        id: go
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
-      - name: Install dependencies
-        run: |
-          curl -L https://github.com/libgit2/libgit2/archive/refs/tags/v1.3.0.tar.gz | tar -xz
-          mkdir -p libgit2-1.3.0/build
-          cd libgit2-1.3.0/build
-          cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_CLAR=OFF
-          sudo cmake --build . --target install
-          cd -
-          rm -rf libgit2-1.3.0
-      - name: Build
-        run: make build
-      - name: Test
-        run: make test
-  # build_windows:
-  #   name: Build Windows
-  #   runs-on: windows-latest
-  #   steps:
-  #     - name: Set up Go 1.x
-  #       uses: actions/setup-go@v2
-  #       with:
-  #         go-version: ^1.16
-  #       id: go
-  #     - name: Check out code into the Go module directory
-  #       uses: actions/checkout@v2
-  #     - uses: msys2/setup-msys2@v2
-  #       with:
-  #         update: true
-  #         install: >-
-  #           make
-  #           mingw-w64-x86_64-libgit2
-  #           pkg-config
-  #           mingw-w64-x86_64-pkg-config
-  #     - name: remove strawberry perl
-  #       run: rm -r C:/Strawberry/perl
-  #     - name: Build
-  #       run: make build
-  #     - name: Test
-  #       run: make test
