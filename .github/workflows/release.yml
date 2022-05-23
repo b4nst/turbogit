@@ -32,195 +32,39 @@ jobs:
           echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
           echo ::set-output name=VERSION_NO_PREFIX::${GITHUB_REF#refs/tags/v}
 
-  package_deb:
-    name: Package deb
-    runs-on: ubuntu-latest
-    needs: create_release
+  build:
+    name: Build binaries
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        goarch: [amd64, arm64]
+    runs-on: ${{ matrix.os }}
     env:
-      GOOS: linux
-      GOARCH: amd64
+      GOARCH: ${{ matrix.goarch }}
+      ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
     steps:
       - name: Set up Go 1.x
         uses: actions/setup-go@v2
         with:
-          go-version: ^1.16
+          go-version: ^1.17
         id: go
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
-      - name: Get dependencies
-        run: |
-          sudo apt update
-          sudo apt install cmake ruby ruby-dev rubygems build-essential
-          sudo gem install --no-document fpm
-          curl -L https://codeload.github.com/libgit2/libgit2/tar.gz/refs/tags/v1.3.0 | tar -xz
-          mkdir -p libgit2-1.3.0/build
-          cd libgit2-1.3.0/build
-          cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_CLAR=OFF
-          sudo cmake --build . --target install
-          cd -
-          rm -rf libgit2-1.3.0
-          go get -v -t -d ./...
-          if [ -f Gopkg.toml ]; then
-              curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-              dep ensure
-          fi
-      - name: Package
+        with:
+          submodules: recursive
+      - name: Build
         env:
           TUG_COMMIT: ${{ github.sha }}
           TUG_VERSION: ${{ needs.create_release.outputs.tag }}
-          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.deb', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
-        run: |
-          make build
-          fpm -s dir -t deb -p ${ASSET_NAME} -C ./bin -v ${TUG_VERSION} --prefix /opt/local/bin/ -n turbogit --description "Opinionated cli enforcing clean git workflow without comprising UX"
+        run: make build
+      - name: Package
+        run: tar -zcvf ${ASSET_NAME} -C bin/ .
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.deb', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
           asset_path: ./${{ env.ASSET_NAME }}
           asset_name: ${{ env.ASSET_NAME }}
-          asset_content_type: application/vnd.debian.binary-package
-
-  package_apk:
-    name: Package apk
-    runs-on: ubuntu-latest
-    needs: create_release
-    env:
-      GOOS: linux
-      GOARCH: amd64
-    steps:
-      - name: Set up Go 1.x
-        uses: actions/setup-go@v2
-        with:
-          go-version: ^1.16
-        id: go
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
-      - name: Get dependencies
-        run: |
-          sudo apt update
-          sudo apt install cmake ruby ruby-dev rubygems build-essential
-          sudo gem install --no-document fpm
-          curl -L https://codeload.github.com/libgit2/libgit2/tar.gz/refs/tags/v1.3.0 | tar -xz
-          mkdir -p libgit2-1.3.0/build
-          cd libgit2-1.3.0/build
-          cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_CLAR=OFF
-          sudo cmake --build . --target install
-          cd -
-          rm -rf libgit2-1.3.0
-          go get -v -t -d ./...
-          if [ -f Gopkg.toml ]; then
-              curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-              dep ensure
-          fi
-      - name: Package
-        env:
-          TUG_COMMIT: ${{ github.sha }}
-          TUG_VERSION: ${{ needs.create_release.outputs.tag }}
-          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.apk', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
-        run: |
-          make build
-          fpm -s dir -t apk -p ${ASSET_NAME} -C ./bin -v ${TUG_VERSION} --prefix /opt/local/bin/ -n turbogit --description "Opinionated cli enforcing clean git workflow without comprising UX"
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.apk', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
-        with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.ASSET_NAME }}
-          asset_name: ${{ env.ASSET_NAME }}
-          asset_content_type: aplication/octet-stream
-
-  package_rpm:
-    name: Package rpm
-    runs-on: ubuntu-latest
-    needs: create_release
-    env:
-      GOOS: linux
-      GOARCH: amd64
-    steps:
-      - name: Set up Go 1.x
-        uses: actions/setup-go@v2
-        with:
-          go-version: ^1.16
-        id: go
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
-      - name: Get dependencies
-        run: |
-          sudo apt update
-          sudo apt install cmake ruby ruby-dev rubygems build-essential
-          sudo gem install --no-document fpm
-          curl -L https://codeload.github.com/libgit2/libgit2/tar.gz/refs/tags/v1.3.0 | tar -xz
-          mkdir -p libgit2-1.3.0/build
-          cd libgit2-1.3.0/build
-          cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_CLAR=OFF
-          sudo cmake --build . --target install
-          cd -
-          rm -rf libgit2-1.3.0
-          go get -v -t -d ./...
-          if [ -f Gopkg.toml ]; then
-              curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-              dep ensure
-          fi
-      - name: Package
-        env:
-          TUG_COMMIT: ${{ github.sha }}
-          TUG_VERSION: ${{ needs.create_release.outputs.tag }}
-          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.rpm', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
-        run: |
-          make build
-          fpm -s dir -t rpm -p ${ASSET_NAME} -C ./bin -v ${TUG_VERSION} --prefix /opt/local/bin/ -n turbogit --description "Opinionated cli enforcing clean git workflow without comprising UX"
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.rpm', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
-        with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.ASSET_NAME }}
-          asset_name: ${{ env.ASSET_NAME }}
-          asset_content_type: aplication/octet-stream
-
-  package_darwin:
-    name: Package macOS
-    runs-on: macos-latest
-    needs: create_release
-    env:
-      GOOS: darwin
-      GOARCH: amd64
-    steps:
-      - name: Set up Go 1.x
-        uses: actions/setup-go@v2
-        with:
-          go-version: ^1.16
-        id: go
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
-      - name: Install dependencies
-        run: |
-          brew install libgit2
-          brew install gnu-tar
-          brew install rpm
-          gem install --no-document fpm
-      - name: Package
-        env:
-          TUG_COMMIT: ${{ github.sha }}
-          TUG_VERSION: ${{ needs.create_release.outputs.tag }}
-          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.pkg', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
-        run: |
-          make build
-          fpm -s dir -t osxpkg -p ${ASSET_NAME} -C ./bin -v ${TUG_VERSION} --prefix /opt/local/bin/ -n turbogit --description "Opinionated cli enforcing clean git workflow without comprising UX"
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.pkg', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
-        with:
-          upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.ASSET_NAME }}
-          asset_name: ${{ env.ASSET_NAME }}
-          asset_content_type: application/vnd.apple.installer+xml
+          asset_content_type: application/octet-stream
