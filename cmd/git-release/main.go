@@ -21,7 +21,7 @@ THE SOFTWARE.
 */
 package main
 
-import "github.com/b4nst/turbogit/cmd/git-ctag/cmd"
+import "github.com/b4nst/turbogit/cmd/git-release/cmd"
 
 func main() {
 	cmd.Execute()

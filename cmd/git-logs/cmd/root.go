@@ -32,7 +32,6 @@ import (
 	"github.com/araddon/dateparse"
 	"github.com/b4nst/turbogit/pkg/format"
 	tugit "github.com/b4nst/turbogit/pkg/git"
-	"github.com/hpcloud/golor"
 	git "github.com/libgit2/git2go/v33"
 	"github.com/spf13/cobra"
 )
@@ -185,152 +184,54 @@ func run(opt *option) error {
 	}
 
 	// Build filters
-	filters := []LogFilter{}
-	if opt.Since != nil {
-		filters = append(filters, func(c *git.Commit, co *format.CommitMessageOption) (p, continueWalk bool) {
-			d := c.Committer().When
-			if d.Before(*opt.Since) {
-				return false, false
-			}
-			return true, true
-		})
+	filters := []LogFilter{
+		Since(opt.Since),
+		Until(opt.Until),
+		Type(opt.Types),
+		Scope(opt.Scopes),
+		BreakingChange(opt.BreakingChange),
 	}
-	if opt.Until != nil {
-		filters = append(filters, func(c *git.Commit, co *format.CommitMessageOption) (p, continueWalk bool) {
-			d := c.Committer().When
-			if d.After(*opt.Until) {
-				return false, true
-			}
-			return true, true
-		})
-	}
-	if opt.BreakingChange {
-		filters = append(filters, func(c *git.Commit, co *format.CommitMessageOption) (p, continueWalk bool) {
-			return co.BreakingChanges, true
-		})
-	}
-	if len(opt.Types) > 0 {
-		filters = append(filters, func(c *git.Commit, co *format.CommitMessageOption) (p, continueWalk bool) {
-			for _, t := range opt.Types {
-				if co.Ctype == t {
-					return true, true
-				}
-			}
-			return false, true
-		})
-	}
-	if len(opt.Scopes) > 0 {
-		filters = append(filters, func(c *git.Commit, co *format.CommitMessageOption) (p, continueWalk bool) {
-			for _, s := range opt.Scopes {
-				if co.Scope == s {
-					return true, true
-				}
-			}
-			return false, true
-		})
-	}
-	// Writer
-	w := tabwriter.NewWriter(os.Stdout, 8, 8, 0, ' ', 0)
 
-	if err := walk.Iterate(buildLogWalker(w, !opt.NoColor, filters)); err != nil {
+	tw := tabwriter.NewWriter(os.Stdout, 10, 1, 1, ' ', 0)
+	defer tw.Flush()
+	if err := walk.Iterate(buildLogWalker(tw, !opt.NoColor, filters)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-type LogFilter func(c *git.Commit, co *format.CommitMessageOption) (p, continueWalk bool)
-
 func buildLogWalker(w io.Writer, color bool, filters []LogFilter) func(c *git.Commit) bool {
 	return func(c *git.Commit) bool {
 		co := format.ParseCommitMsg(c.Message())
-		parsed := true
 		if co == nil {
-			parsed = false
 			co = &format.CommitMessageOption{}
 		}
-		p, continueWalk := true, true
-		for _, filter := range filters {
-			p, continueWalk = filter(c, co)
-			if !continueWalk {
-				return false
-			}
-			if !p {
-				break
-			}
+		keep, walk := ApplyFilters(c, co, filters...)
+		if !keep {
+			return walk
 		}
-		if p {
-			fprettyprint(w, c, co, color, parsed)
+
+		// Hash
+		h, err := c.ShortId()
+		if err != nil {
+			h = c.Id().String()
 		}
-		return true
-	}
-}
-
-func fprettyprint(w io.Writer, c *git.Commit, co *format.CommitMessageOption, color bool, parsed bool) {
-	// Hash
-	h, err := c.ShortId()
-	if err != nil {
-		h = c.Id().String()
-	}
-	if color {
-		h = golor.Colorize(h, golor.W, -1)
-	}
-	fmt.Fprintf(w, "(%s)", h)
-
-	// Message
-	msg := co.Description
-	if color {
-		msg = golor.Colorize(msg, 15, -1)
-	}
-	fmt.Fprintf(w, " %s", msg)
-
-	// Annotation
-	if co.BreakingChanges || !parsed {
-		an := "!BREAKING CHANGE"
-		if !parsed {
-			an = "!BADBEEF"
-		}
+		// type
+		var ctype string
 		if color {
-			an = golor.Colorize(an, golor.W, golor.RED)
+			h = fmt.Sprintf("\x1b[38;5;231m%s\x1b[0m", h)
+			ctype = co.Ctype.ColorString()
+		} else {
+			ctype = co.Ctype.String()
 		}
-		fmt.Fprintf(w, " - %s", an)
-	}
-	// End of the first line
-	fmt.Fprintln(w)
+		// description
+		msg := co.Description
+		if msg == "" {
+			msg = c.Summary()
+		}
+		fmt.Fprintf(w, "%s\t%s\t%s\t\n", h, ctype, msg)
 
-	// Author
-	author := c.Author()
-	fmt.Fprintf(w, "\tAuthor:\t%s <%s>\n", author.Name, author.Email)
-	// Committer
-	committer := c.Committer()
-	fmt.Fprintf(w, "\tCommitter:\t%s <%s>\n", committer.Name, committer.Email)
-
-	// Date
-	fmt.Fprintf(w, "\tDate:\t%s\n", committer.When.Format(time.UnixDate))
-
-	if parsed {
-		// Type
-		ct := co.Ctype.String()
-		if color {
-			ct = format.ColorizeCommitType(ct, co.Ctype)
-		}
-		fmt.Fprintf(w, "\tType:\t%s\n", ct)
-		// Scope
-		scope := co.Scope
-		if scope == "" {
-			scope = "none"
-		}
-		if color {
-			scope = golor.Colorize(scope, golor.AssignColor(scope), -1)
-		}
-		fmt.Fprintf(w, "\tScope:\t%s\n", scope)
-	}
-
-	if co.Body != "" || len(co.Footers) > 0 {
-		fmt.Fprintf(w, "\n\t%s", co.Body)
-		for _, f := range co.Footers {
-			fmt.Fprintf(w, "\n\t%s", f)
-		}
-		fmt.Fprintln(w)
+		return walk
 	}
 }

@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
-	"os"
 	"testing"
 
 	tugit "github.com/b4nst/turbogit/pkg/git"
@@ -28,10 +26,6 @@ func TestRunCheck(t *testing.T) {
 	sid3, err := c3.ShortId()
 	require.NoError(t, err)
 
-	stderr, reset := test.CaptureStd(t, os.Stderr)
-	err = run(&option{All: false, From: "HEAD", Repo: r})
-	reset()
-	assert.EqualError(t, err, "This commits are not compliant")
-	stde, err := ioutil.ReadFile(stderr.Name())
-	assert.Equal(t, fmt.Sprintf("%s %s\n%s %s\n", sid3, "bad commit 2", sid1, "bad commit 1"), string(stde))
+	err = check(&option{All: false, From: "HEAD", Repo: r})
+	assert.EqualError(t, err, fmt.Sprintf("2 errors occurred:\n\t* %s ('bad commit 2') is not compliant\n\t* %s ('bad commit 1') is not compliant\n\n", sid3, sid1))
 }
