@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/b4nst/turbogit/pkg/constants"
-	"github.com/hpcloud/golor"
 	"github.com/imdario/mergo"
 )
 
@@ -28,26 +27,39 @@ const (
 )
 
 func (b CommitType) String() string {
-	return [...]string{"", "build", "ci", "chore", "docs", "feat", "fix", "perf", "refactor", "style", "test"}[b]
+	return [...]string{
+		"",
+		"build",
+		"ci",
+		"chore",
+		"docs",
+		"feat",
+		"fix",
+		"perf",
+		"refactor",
+		"style",
+		"test",
+	}[b]
 }
 
-func ColorizeCommitType(s string, ct CommitType) string {
-	switch ct {
-	case FeatureCommit:
-		return golor.Colorize(s, golor.GREEN, -1)
-	case DocCommit:
-		return golor.Colorize(s, golor.BLUE, -1)
-	case TestCommit, PerfCommit:
-		return golor.Colorize(s, golor.CYAN, -1)
-	case FixCommit:
-		return golor.Colorize(s, golor.MAGENTA, -1)
-	case CiCommit, BuildCommit:
-		return golor.Colorize(s, golor.YELLOW, -1)
-	case NilCommit:
-		return golor.Colorize(s, golor.GRAY, -1)
-	default:
-		return golor.Colorize(s, golor.WHITE, -1)
-	}
+func colorize(s string, code int) string {
+	return fmt.Sprintf("\x1b[38;5;%03dm%s\x1b[0m", code, s)
+}
+
+func (b CommitType) ColorString() string {
+	return [...]string{
+		colorize("", 0),
+		colorize("build", 200),
+		colorize("ci", 92),
+		colorize("chore", 15),
+		colorize("docs", 250),
+		colorize("feat", 2),
+		colorize("fix", 1),
+		colorize("perf", 3),
+		colorize("refactor", 30),
+		colorize("style", 6),
+		colorize("test", 11),
+	}[b]
 }
 
 func AllCommitType() []string {

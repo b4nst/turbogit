@@ -13,13 +13,14 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-hclog v1.0.0 // indirect
+	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hpcloud/golor v0.0.0-20150914221010-dc1b58c471a0
 	github.com/imdario/mergo v0.3.12
 	github.com/ktr0731/go-fuzzyfinder v0.5.1
 	github.com/libgit2/git2go/v33 v33.0.9
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/nsf/termbox-go v0.0.0-20201124104050-ed494de23a00
-	github.com/spf13/cobra v1.4.0
+	github.com/spf13/cobra v1.4.1-0.20220414043027-bf6cb5804d7a
 	github.com/stretchr/testify v1.7.0
 	github.com/whilp/git-urls v1.0.0
 	github.com/xanzy/go-gitlab v0.54.4

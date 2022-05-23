@@ -22,13 +22,11 @@ THE SOFTWARE.
 package cmd
 
 import (
-	"errors"
 	"fmt"
-	"log"
-	"os"
 
+	"github.com/b4nst/turbogit/internal/cmdbuilder"
 	"github.com/b4nst/turbogit/pkg/format"
-	tugit "github.com/b4nst/turbogit/pkg/git"
+	"github.com/hashicorp/go-multierror"
 	git "github.com/libgit2/git2go/v33"
 	"github.com/spf13/cobra"
 )
@@ -36,6 +34,8 @@ import (
 func init() {
 	rootCmd.Flags().BoolP("all", "a", false, "Check all the commits in refs/*, along with HEAD")
 	rootCmd.Flags().StringP("from", "f", "HEAD", "Commit to start from. Can be a hash or any revision as accepted by rev parse.")
+
+	cmdbuilder.RepoAware(rootCmd)
 }
 
 type option struct {
@@ -52,49 +52,28 @@ var rootCmd = &cobra.Command{
 $ git check
 `,
 	Args: cobra.NoArgs,
-	Run:  runCmd,
+	Run:  run,
 }
 
-func runCmd(cmd *cobra.Command, args []string) {
-	opt, err := parseCmd(cmd, args)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = run(opt)
-	if err != nil {
-		log.Fatal(err)
-	}
+func run(cmd *cobra.Command, args []string) {
+	opt := &option{}
+	var err error
+
+	opt.All, err = cmd.Flags().GetBool("all")
+	cobra.CheckErr(err)
+
+	opt.From, err = cmd.Flags().GetString("from")
+	cobra.CheckErr(err)
+
+	opt.Repo = cmdbuilder.GetRepo(cmd)
+
+	cobra.CheckErr(check(opt))
+
+	cmd.Println("repository compliant.")
 }
 
-func parseCmd(cmd *cobra.Command, args []string) (*option, error) {
-	// --all
-	fAll, err := cmd.Flags().GetBool("all")
-	if err != nil {
-		return nil, err
-	}
-	// --from
-	fFrom, err := cmd.Flags().GetString("from")
-	if err != nil {
-		return nil, err
-	}
-
-	// Find repo
-	repo, err := tugit.Getrepo()
-	if err != nil {
-		return nil, err
-	}
-
-	return &option{
-		All:  fAll,
-		From: fFrom,
-		Repo: repo,
-	}, nil
-}
-
-func run(opt *option) error {
-	r := opt.Repo
-
-	walk, err := r.Walk()
+func check(opt *option) error {
+	walk, err := opt.Repo.Walk()
 	if err != nil {
 		return err
 	}
@@ -103,7 +82,7 @@ func run(opt *option) error {
 			return err
 		}
 	} else {
-		from, err := r.RevparseSingle(opt.From)
+		from, err := opt.Repo.RevparseSingle(opt.From)
 		if err != nil {
 			return err
 		}
@@ -112,30 +91,24 @@ func run(opt *option) error {
 		}
 	}
 
-	// Non format compliant commits
-	var nfc []git.Commit
-
-	walker := func(c *git.Commit) bool {
-		co := format.ParseCommitMsg(c.Message())
-		if co == nil {
-			nfc = append(nfc, *c)
-		}
-		return true
-	}
-	if err := walk.Iterate(walker); err != nil {
+	merr := &multierror.Error{}
+	if err := walk.Iterate(walker(merr)); err != nil {
 		return err
 	}
-	if len(nfc) == 0 {
-		fmt.Println("All commits are compliant")
-		return nil
-	} else {
-		for _, c := range nfc {
-			sid, err := c.ShortId()
-			if err != nil {
-				sid = c.Id().String()
-			}
-			fmt.Fprintln(os.Stderr, sid, c.Summary())
+	return merr.ErrorOrNil()
+}
+
+func walker(merr *multierror.Error) git.RevWalkIterator {
+	return func(c *git.Commit) bool {
+		sid, err := c.ShortId()
+		if err != nil {
+			multierror.Append(merr, err)
+			return true
 		}
-		return errors.New("This commits are not compliant")
+		co := format.ParseCommitMsg(c.Message())
+		if co == nil {
+			multierror.Append(merr, fmt.Errorf("%s ('%s') is not compliant", sid, c.Summary()))
+		}
+		return true
 	}
 }
