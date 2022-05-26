@@ -9,7 +9,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/briandowns/spinner v1.18.1
 	github.com/hpcloud/golor v0.0.0-20150914221010-dc1b58c471a0
-	github.com/imdario/mergo v0.3.12
+	github.com/imdario/mergo v0.3.13
 	github.com/kr/text v0.2.0 // indirect
 	github.com/ktr0731/go-fuzzyfinder v0.5.1
 	github.com/libgit2/git2go/v33 v33.0.9
