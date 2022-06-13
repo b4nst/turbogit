@@ -1,6 +1,6 @@
 # Build config
 PLUGIN_DIRS = $(sort $(dir $(wildcard cmd/*/*)))
-PLUGIN_BINS = $(addprefix bin/, $(PLUGIN_DIRS:cmd/%/=%))
+PLUGIN_BINS = $(addprefix dist/bin/, $(PLUGIN_DIRS:cmd/%/=%))
 BUILD_FILES = $(shell go list -f '{{range .GoFiles}}{{$$.Dir}}/{{.}} {{end}}' ./...)
 
 # Go config

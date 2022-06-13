@@ -63,7 +63,7 @@ type option struct {
 
 // RootCmd represents the log command
 var RootCmd = &cobra.Command{
-	Use:   "git-logs",
+	Use:   "logs",
 	Short: "Shows the commit logs.",
 	Args:  cobra.NoArgs,
 	Run:   runCmd,

@@ -19,7 +19,6 @@ require (
 	github.com/ktr0731/go-fuzzyfinder v0.5.1
 	github.com/libgit2/git2go/v33 v33.0.9
 	github.com/mattn/go-colorable v0.1.12 // indirect
-	github.com/nsf/termbox-go v0.0.0-20201124104050-ed494de23a00
 	github.com/spf13/cobra v1.4.1-0.20220414043027-bf6cb5804d7a
 	github.com/stretchr/testify v1.7.0
 	github.com/whilp/git-urls v1.0.0

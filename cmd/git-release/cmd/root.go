@@ -41,7 +41,7 @@ func init() {
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "git-release",
+	Use:   "release",
 	Short: "Release a SemVer tag based on the commit history.",
 	Example: `
 # Given that the last release tag was v1.0.0, some feature were committed but no breaking changes.

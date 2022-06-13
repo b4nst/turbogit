@@ -35,7 +35,7 @@ import (
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "git-new [type] [description]",
+	Use:   "new [type] [description]",
 	Short: "Start a new branch.",
 	Long: `
 If you don't give any argument, the command will look for issue in pre-configured issues provider.
