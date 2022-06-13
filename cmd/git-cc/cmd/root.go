@@ -64,7 +64,7 @@ type option struct {
 }
 
 var RootCmd = &cobra.Command{
-	Use:   "git-cc [type] [subject]",
+	Use:   "cc [type] [subject]",
 	Short: "Commit using conventional commit message",
 	// DisableFlagsInUseLine: true,
 	Example: `

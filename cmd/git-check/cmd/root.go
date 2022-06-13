@@ -45,7 +45,7 @@ type option struct {
 }
 
 var RootCmd = &cobra.Command{
-	Use:   "git-check",
+	Use:   "check",
 	Short: "Check the history to follow conventional commit",
 	Example: `
 # Check if all is ok
