@@ -34,12 +34,12 @@ import (
 )
 
 func init() {
-	rootCmd.Flags().StringP("type", "t", "", fmt.Sprintf("Commit types %s", format.AllCommitType()))
-	rootCmd.RegisterFlagCompletionFunc("type", typeFlagCompletion)
-	rootCmd.Flags().BoolP("breaking-changes", "c", false, "Commit contains breaking changes")
-	rootCmd.Flags().BoolP("edit", "e", false, "Prompt editor to edit your message (add body or/and footer(s))")
-	rootCmd.Flags().StringP("scope", "s", "", "Add a scope")
-	rootCmd.Flags().BoolP("amend", "a", false, "Amend commit")
+	RootCmd.Flags().StringP("type", "t", "", fmt.Sprintf("Commit types %s", format.AllCommitType()))
+	RootCmd.RegisterFlagCompletionFunc("type", typeFlagCompletion)
+	RootCmd.Flags().BoolP("breaking-changes", "c", false, "Commit contains breaking changes")
+	RootCmd.Flags().BoolP("edit", "e", false, "Prompt editor to edit your message (add body or/and footer(s))")
+	RootCmd.Flags().StringP("scope", "s", "", "Add a scope")
+	RootCmd.Flags().BoolP("amend", "a", false, "Amend commit")
 }
 
 func typeFlagCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -63,7 +63,7 @@ type option struct {
 	Repo *git.Repository
 }
 
-var rootCmd = &cobra.Command{
+var RootCmd = &cobra.Command{
 	Use:   "git-cc [type] [subject]",
 	Short: "Commit using conventional commit message",
 	// DisableFlagsInUseLine: true,

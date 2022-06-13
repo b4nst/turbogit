@@ -32,10 +32,10 @@ import (
 )
 
 func init() {
-	rootCmd.Flags().BoolP("all", "a", false, "Check all the commits in refs/*, along with HEAD")
-	rootCmd.Flags().StringP("from", "f", "HEAD", "Commit to start from. Can be a hash or any revision as accepted by rev parse.")
+	RootCmd.Flags().BoolP("all", "a", false, "Check all the commits in refs/*, along with HEAD")
+	RootCmd.Flags().StringP("from", "f", "HEAD", "Commit to start from. Can be a hash or any revision as accepted by rev parse.")
 
-	cmdbuilder.RepoAware(rootCmd)
+	cmdbuilder.RepoAware(RootCmd)
 }
 
 type option struct {
@@ -44,7 +44,7 @@ type option struct {
 	Repo *git.Repository
 }
 
-var rootCmd = &cobra.Command{
+var RootCmd = &cobra.Command{
 	Use:   "git-check",
 	Short: "Check the history to follow conventional commit",
 	Example: `
