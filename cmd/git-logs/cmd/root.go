@@ -37,16 +37,16 @@ import (
 )
 
 func init() {
-	rootCmd.Flags().BoolP("all", "a", false, "Pretend as if all the refs in refs/, along with HEAD, are listed on the command line as <commit>. If set on true, the --from option will be ignored.")
-	rootCmd.Flags().Bool("no-color", false, "Disable color output")
-	rootCmd.Flags().StringP("from", "f", "HEAD", "Logs only commits reachable from this one")
-	rootCmd.Flags().String("since", "", "Show commits more recent than a specific date")
-	rootCmd.Flags().String("until", "", "Show commits older than a specific date")
+	RootCmd.Flags().BoolP("all", "a", false, "Pretend as if all the refs in refs/, along with HEAD, are listed on the command line as <commit>. If set on true, the --from option will be ignored.")
+	RootCmd.Flags().Bool("no-color", false, "Disable color output")
+	RootCmd.Flags().StringP("from", "f", "HEAD", "Logs only commits reachable from this one")
+	RootCmd.Flags().String("since", "", "Show commits more recent than a specific date")
+	RootCmd.Flags().String("until", "", "Show commits older than a specific date")
 	// logCmd.Flags().String("path", "", "Filter commits based on the path of files that are updated. Accept regexp")
 	// Filters
-	rootCmd.Flags().StringArrayP("type", "t", []string{}, "Filter commits by type (repeatable option)")
-	rootCmd.Flags().StringArrayP("scope", "s", []string{}, "Filter commits by scope (repeatable option)")
-	rootCmd.Flags().BoolP("breaking-changes", "c", false, "Only shows breaking changes")
+	RootCmd.Flags().StringArrayP("type", "t", []string{}, "Filter commits by type (repeatable option)")
+	RootCmd.Flags().StringArrayP("scope", "s", []string{}, "Filter commits by scope (repeatable option)")
+	RootCmd.Flags().BoolP("breaking-changes", "c", false, "Only shows breaking changes")
 }
 
 type option struct {
@@ -61,8 +61,8 @@ type option struct {
 	Repo           *git.Repository
 }
 
-// rootCmd represents the log command
-var rootCmd = &cobra.Command{
+// RootCmd represents the log command
+var RootCmd = &cobra.Command{
 	Use:   "git-logs",
 	Short: "Shows the commit logs.",
 	Args:  cobra.NoArgs,

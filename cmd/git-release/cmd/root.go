@@ -33,14 +33,14 @@ import (
 )
 
 func init() {
-	rootCmd.Flags().BoolP("dry-run", "d", false, "Do not tag.")
-	rootCmd.Flags().StringP("prefix", "p", "v", "Tag prefix.")
+	RootCmd.Flags().BoolP("dry-run", "d", false, "Do not tag.")
+	RootCmd.Flags().StringP("prefix", "p", "v", "Tag prefix.")
 
-	cmdbuilder.RepoAware(rootCmd)
+	cmdbuilder.RepoAware(RootCmd)
 }
 
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
+// RootCmd represents the base command when called without any subcommands
+var RootCmd = &cobra.Command{
 	Use:   "git-release",
 	Short: "Release a SemVer tag based on the commit history.",
 	Example: `
