@@ -15,7 +15,7 @@ require (
 	github.com/libgit2/git2go/v33 v33.0.9
 	github.com/nsf/termbox-go v0.0.0-20201124104050-ed494de23a00
 	github.com/spf13/cobra v1.3.0
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.4
 	github.com/whilp/git-urls v1.0.0
 	github.com/xanzy/go-gitlab v0.54.4
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
