@@ -32,19 +32,21 @@ import (
 )
 
 func init() {
-	RootCmd.Flags().BoolP("all", "a", false, "Check all the commits in refs/*, along with HEAD")
-	RootCmd.Flags().StringP("from", "f", "HEAD", "Commit to start from. Can be a hash or any revision as accepted by rev parse.")
+	RootCmd.AddCommand(CheckCmd)
 
-	cmdbuilder.RepoAware(RootCmd)
+	CheckCmd.Flags().BoolP("all", "a", false, "Check all the commits in refs/*, along with HEAD")
+	CheckCmd.Flags().StringP("from", "f", "HEAD", "Commit to start from. Can be a hash or any revision as accepted by rev parse.")
+
+	cmdbuilder.RepoAware(CheckCmd)
 }
 
-type option struct {
+type checkOpt struct {
 	All  bool
 	From string
 	Repo *git.Repository
 }
 
-var RootCmd = &cobra.Command{
+var CheckCmd = &cobra.Command{
 	Use:   "check",
 	Short: "Check the history to follow conventional commit",
 	Example: `
@@ -56,7 +58,7 @@ $ git check
 }
 
 func run(cmd *cobra.Command, args []string) {
-	opt := &option{}
+	opt := &checkOpt{}
 	var err error
 
 	opt.All, err = cmd.Flags().GetBool("all")
@@ -72,7 +74,7 @@ func run(cmd *cobra.Command, args []string) {
 	cmd.Println("repository compliant.")
 }
 
-func check(opt *option) error {
+func check(opt *checkOpt) error {
 	walk, err := opt.Repo.Walk()
 	if err != nil {
 		return err

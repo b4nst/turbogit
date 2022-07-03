@@ -26,6 +26,6 @@ func TestRunCheck(t *testing.T) {
 	sid3, err := c3.ShortId()
 	require.NoError(t, err)
 
-	err = check(&option{All: false, From: "HEAD", Repo: r})
+	err = check(&checkOpt{All: false, From: "HEAD", Repo: r})
 	assert.EqualError(t, err, fmt.Sprintf("2 errors occurred:\n\t* %s ('bad commit 2') is not compliant\n\t* %s ('bad commit 1') is not compliant\n\n", sid3, sid1))
 }
