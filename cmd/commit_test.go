@@ -25,7 +25,7 @@ func TestParseCommitCmd(t *testing.T) {
 
 	cco, err := parseCommitCmd(cmd, []string{"hello", "world!"})
 	require.NoError(t, err)
-	expect := option{
+	expect := commitOpt{
 		CType:           format.FixCommit,
 		Message:         "hello world!",
 		Scope:           "scope",

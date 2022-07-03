@@ -34,19 +34,21 @@ import (
 )
 
 func init() {
-	RootCmd.Flags().StringP("type", "t", "", fmt.Sprintf("Commit types %s", format.AllCommitType()))
-	RootCmd.RegisterFlagCompletionFunc("type", typeFlagCompletion)
-	RootCmd.Flags().BoolP("breaking-changes", "c", false, "Commit contains breaking changes")
-	RootCmd.Flags().BoolP("edit", "e", false, "Prompt editor to edit your message (add body or/and footer(s))")
-	RootCmd.Flags().StringP("scope", "s", "", "Add a scope")
-	RootCmd.Flags().BoolP("amend", "a", false, "Amend commit")
+	RootCmd.AddCommand(CommitCmd)
+
+	CommitCmd.Flags().StringP("type", "t", "", fmt.Sprintf("Commit types %s", format.AllCommitType()))
+	CommitCmd.RegisterFlagCompletionFunc("type", typeFlagCompletion)
+	CommitCmd.Flags().BoolP("breaking-changes", "c", false, "Commit contains breaking changes")
+	CommitCmd.Flags().BoolP("edit", "e", false, "Prompt editor to edit your message (add body or/and footer(s))")
+	CommitCmd.Flags().StringP("scope", "s", "", "Add a scope")
+	CommitCmd.Flags().BoolP("amend", "a", false, "Amend commit")
 }
 
 func typeFlagCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	return format.AllCommitType(), cobra.ShellCompDirectiveDefault
 }
 
-type option struct {
+type commitOpt struct {
 	// Commit type
 	CType format.CommitType
 	// True if this commit introduces breaking changes
@@ -63,25 +65,25 @@ type option struct {
 	Repo *git.Repository
 }
 
-var RootCmd = &cobra.Command{
-	Use:   "cc [type] [subject]",
+var CommitCmd = &cobra.Command{
+	Use:   "commit [type] [subject]",
 	Short: "Commit using conventional commit message",
 	// DisableFlagsInUseLine: true,
 	Example: `
 # Commit a new feature (feat: a new feature)
-$ git cc feat a new feature
+$ tug commit feat a new feature
 
 # Commit a fix that brings breaking changes (fix!: API break)
-$ git cc fix -c API break
+$ tug commit fix -c API break
 
 # Add a scope to the commit (refactor(scope): a scopped refactor)
-$ git cc refactor a scopped refactor -s scope
+$ tug commit refactor a scopped refactor -s scope
 
 # Open your editor to edit the commit message
-$ git cc ci -e message
+$ tug commit ci -e message
 
 # Ammend last commit type
-$ git cc -a -t fix
+$ tug commit -a -t fix
 	`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		amend, _ := cmd.Flags().GetBool("amend")
@@ -114,7 +116,7 @@ func runCommitCmd(cmd *cobra.Command, args []string) {
 	}
 }
 
-func parseCommitCmd(cmd *cobra.Command, args []string) (*option, error) {
+func parseCommitCmd(cmd *cobra.Command, args []string) (*commitOpt, error) {
 	// --type
 	fType, err := cmd.Flags().GetString("type")
 	if err != nil {
@@ -159,7 +161,7 @@ func parseCommitCmd(cmd *cobra.Command, args []string) (*option, error) {
 		return nil, err
 	}
 
-	return &option{
+	return &commitOpt{
 		CType:           ctype,
 		BreakingChanges: fBreakingChanges,
 		Message:         strings.Join(args, " "),
@@ -170,7 +172,7 @@ func parseCommitCmd(cmd *cobra.Command, args []string) (*option, error) {
 	}, nil
 }
 
-func runCommit(cco *option) error {
+func runCommit(cco *commitOpt) error {
 	var ca *git.Commit
 	if cco.Amend {
 		o, err := cco.Repo.RevparseSingle("HEAD")

@@ -1,5 +1,5 @@
 /*
-Copyright © 2022 banst
+Copyright © 2020 banst
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,10 +19,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-package main
+package cmd
 
-import "github.com/b4nst/turbogit/cmd/git-cc/cmd"
+import (
+	"log"
+	"os"
 
-func main() {
-	cmd.Execute()
+	"github.com/spf13/cobra"
+)
+
+const (
+	BIN_NAME = "tug"
+)
+
+var (
+	Version   = "dev"
+	Commit    = "nil"
+	BuildDate = "nil"
+
+	RootCmd = &cobra.Command{
+		Use:   BIN_NAME,
+		Short: "Set of opinionated git plugins.",
+	}
+)
+
+func Execute() {
+	if err := RootCmd.Execute(); err != nil {
+		os.Exit(1)
+	}
+}
+
+func init() {
+	log.SetFlags(0)
 }
