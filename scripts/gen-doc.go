@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/b4nst/turbogit/cmd"
@@ -14,8 +15,12 @@ import (
 )
 
 const (
-	Workdir      = "dist/doc"
-	AssetsSrcDir = "assets"
+	Workdir       = "dist/doc"
+	AssetsSrcDir  = "assets"
+	titleTemplate = `---
+title: %s
+---
+`
 )
 
 var (
@@ -55,7 +60,16 @@ func main() {
 	log.Println("Ensure commands dir exists...")
 	checkErr(os.MkdirAll(cmdDir, 0700))
 	log.Println("Generate commands documentation...")
-	checkErr(doc.GenMarkdownTree(cmd.RootCmd, cmdDir))
+	filePrepender := func(filename string) string {
+		name := filepath.Base(filename)
+		base := strings.TrimSuffix(name, path.Ext(name))
+		return fmt.Sprintf(titleTemplate, strings.ReplaceAll(base, "_", " "))
+	}
+	linkHandler := func(name string) string {
+		base := strings.TrimSuffix(name, path.Ext(name))
+		return "/Commands/" + strings.ToLower(base)
+	}
+	checkErr(doc.GenMarkdownTreeCustom(cmd.RootCmd, cmdDir, filePrepender, linkHandler))
 
 	log.Println("Generate nav bar...")
 	doctave.Navigation = []Nav{
@@ -128,9 +142,7 @@ func Copy(dst, src, rename string) (int64, error) {
 		return 0, err
 	}
 	if rename != "" {
-		fmt.Fprintln(destination, "---")
-		fmt.Fprintf(destination, "title: %s\n", rename)
-		fmt.Fprintln(destination, "---")
+		fmt.Fprintf(destination, titleTemplate, rename)
 	}
 	defer destination.Close()
 	return io.Copy(destination, source)
