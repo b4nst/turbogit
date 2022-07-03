@@ -24,7 +24,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"text/tabwriter"
 	"time"
@@ -37,19 +36,21 @@ import (
 )
 
 func init() {
-	RootCmd.Flags().BoolP("all", "a", false, "Pretend as if all the refs in refs/, along with HEAD, are listed on the command line as <commit>. If set on true, the --from option will be ignored.")
-	RootCmd.Flags().Bool("no-color", false, "Disable color output")
-	RootCmd.Flags().StringP("from", "f", "HEAD", "Logs only commits reachable from this one")
-	RootCmd.Flags().String("since", "", "Show commits more recent than a specific date")
-	RootCmd.Flags().String("until", "", "Show commits older than a specific date")
+	RootCmd.AddCommand(LogCmd)
+
+	LogCmd.Flags().BoolP("all", "a", false, "Pretend as if all the refs in refs/, along with HEAD, are listed on the command line as <commit>. If set on true, the --from option will be ignored.")
+	LogCmd.Flags().Bool("no-color", false, "Disable color output")
+	LogCmd.Flags().StringP("from", "f", "HEAD", "Logs only commits reachable from this one")
+	LogCmd.Flags().String("since", "", "Show commits more recent than a specific date")
+	LogCmd.Flags().String("until", "", "Show commits older than a specific date")
 	// logCmd.Flags().String("path", "", "Filter commits based on the path of files that are updated. Accept regexp")
 	// Filters
-	RootCmd.Flags().StringArrayP("type", "t", []string{}, "Filter commits by type (repeatable option)")
-	RootCmd.Flags().StringArrayP("scope", "s", []string{}, "Filter commits by scope (repeatable option)")
-	RootCmd.Flags().BoolP("breaking-changes", "c", false, "Only shows breaking changes")
+	LogCmd.Flags().StringArrayP("type", "t", []string{}, "Filter commits by type (repeatable option)")
+	LogCmd.Flags().StringArrayP("scope", "s", []string{}, "Filter commits by scope (repeatable option)")
+	LogCmd.Flags().BoolP("breaking-changes", "c", false, "Only shows breaking changes")
 }
 
-type option struct {
+type logOpt struct {
 	All            bool
 	NoColor        bool
 	From           string
@@ -61,25 +62,21 @@ type option struct {
 	Repo           *git.Repository
 }
 
-// RootCmd represents the log command
-var RootCmd = &cobra.Command{
+// LogCmd represents the log command
+var LogCmd = &cobra.Command{
 	Use:   "logs",
 	Short: "Shows the commit logs.",
 	Args:  cobra.NoArgs,
-	Run:   runCmd,
+	Run:   runLog,
 }
 
-func runCmd(cmd *cobra.Command, args []string) {
+func runLog(cmd *cobra.Command, args []string) {
 	opt, err := parseCmd(cmd, args)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := run(opt); err != nil {
-		log.Fatal(err)
-	}
+	cobra.CheckErr(err)
+	cobra.CheckErr(doLog(opt))
 }
 
-func parseCmd(cmd *cobra.Command, args []string) (*option, error) {
+func parseCmd(cmd *cobra.Command, args []string) (*logOpt, error) {
 	// --all
 	fAll, err := cmd.Flags().GetBool("all")
 	if err != nil {
@@ -149,7 +146,7 @@ func parseCmd(cmd *cobra.Command, args []string) (*option, error) {
 		return nil, err
 	}
 
-	return &option{
+	return &logOpt{
 		All:            fAll,
 		NoColor:        fNoColor,
 		From:           fFrom,
@@ -162,7 +159,7 @@ func parseCmd(cmd *cobra.Command, args []string) (*option, error) {
 	}, nil
 }
 
-func run(opt *option) error {
+func doLog(opt *logOpt) error {
 	r := opt.Repo
 
 	walk, err := r.Walk()
