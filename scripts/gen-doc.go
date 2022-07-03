@@ -44,7 +44,6 @@ func main() {
 
 	log.Println("Copy assets...")
 	_, err := Copy(path.Join(IncludeDir, doctave.Logo), path.Join(AssetsSrcDir, "tu_logo.png"), "")
-	_, err = Copy(path.Join(IncludeDir, "assets/tug.gif"), path.Join(AssetsSrcDir, "tug.gif"), "")
 	checkErr(err)
 
 	log.Println("Copy static documentation")

@@ -13,8 +13,6 @@ tug enforces conventions like [The Conventional Commits](https://www.conventiona
 without overwhelming you.
 tug is your friend.
 
-![tug example](assets/tug.gif)
-
 ## Documentation
 
 Full documentation is available at [b4nst.github.io/turbogit](https://b4nst.github.io/turbogit)

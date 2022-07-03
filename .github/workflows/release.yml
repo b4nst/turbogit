@@ -60,7 +60,7 @@ jobs:
           RAW_TAG: ${{ needs.create_release.outputs.raw_tag }}
         run: |
           make build
-          echo ::set-output name=ASSET_NAME::turbogit_${RAW_TAG}_${GOOS}_${GOARCH}.tar.gz
+          echo ::set-output name=ASSET_NAME::turbogit_${RAW_TAG}_$(go env GOOS)_$(go env GOARCH).tar.gz
       - name: Package
         env:
           ASSET_NAME: ${{ steps.build.outputs.ASSET_NAME }}
