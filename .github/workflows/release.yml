@@ -60,7 +60,7 @@ jobs:
       - name: Package
         env:
           ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
-        run: tar -zcvf ${ASSET_NAME} -C bin/ .
+        run: tar -zcvf ${ASSET_NAME} -C dist/bin/ .
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
