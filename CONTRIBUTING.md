@@ -3,28 +3,20 @@
 We would love for you to contribute to Turbogit and help make it even better than it is
 today! As a contributor, here are the guidelines we would like you to follow:
 
- - [Code of Conduct](#coc)
- - [Question or Problem?](#question)
- - [Issues and Bugs](#issue)
- - [Feature Requests](#feature)
- - [Submission Guidelines](#submit)
- - [Coding Rules](#rules)
- - [Commit Message Guidelines](#commit)
+## Code of Conduct
+Help us keep Turbogit open and inclusive. Please read and follow our [Code of Conduct](/code-of-conduct).
 
-## <a name="coc"></a> Code of Conduct
-Help us keep Turbogit open and inclusive. Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
-
-## <a name="question"></a> Got a Question or Problem?
+## Got a Question or Problem?
 If you have any questions regarding how to use Turbogit or contributing to this repo
-please [submitting an issue](#submit-issue) using the **Need help** template.
+please [submit an issue](/contributing#submitting-an-issue) using the **Need help** template.
 
-## <a name="issue"></a> Found a Bug?
+## Found a Bug?
 If you find a bug in the source code, you can help us by
-[submitting an issue](#submit-issue) using the **Bug report** template. Even better, you can
-[submit a Pull Request](#submit-pr) with a fix.
+[submitting an issue](/contributing#submitting-an-issue) using the **Bug report** template. Even better, you can
+[submit a Pull Request](/contributing#submitting-a-pull-request) with a fix.
 
-## <a name="feature"></a> Missing a Feature?
-You can *request* a new feature by [submitting an issue](#submit-issue) to our GitHub
+## Missing a Feature?
+You can *request* a new feature by [submitting an issue](/contributing#submitting-an-issue) to our GitHub
 Repository using the **Feature request** template. If you would like to *implement* a new feature, please submit an issue with
 a proposal for your work first, to be sure that we can use it.
 Please consider what kind of change it is:
@@ -32,11 +24,11 @@ Please consider what kind of change it is:
 * For a **Major Feature**, first open an issue and outline your proposal so that it can be
 discussed. This will also allow us to better coordinate our efforts, prevent duplication of work,
 and help you to craft the change so that it is successfully accepted into the project.
-* **Small Features** can be crafted and directly [submitted as a Pull Request](#submit-pr).
+* **Small Features** can be crafted and directly [submitted as a Pull Request](/contributing#submitting-a-pull-request).
 
-## <a name="submit"></a> Submission Guidelines
+## Submission Guidelines
 
-### <a name="submit-issue"></a> Submitting an Issue
+### Submitting an Issue
 
 Before you submit an issue, please search the issue tracker, maybe an issue for your problem already exists and the discussion might inform you of workarounds readily available.
 
@@ -56,7 +48,7 @@ Unfortunately, we are not able to investigate / fix bugs without a minimal repro
 You can file new issues by filling out our [new issue form](https://github.com/b4nst/turbogit/issues/new/choose) using the **Bug report** template.
 
 
-### <a name="submit-pr"></a> Submitting a Pull Request (PR)
+### Submitting a Pull Request
 Before you submit your Pull Request (PR) consider the following guidelines:
 
 1. Search [GitHub](https://github.com/angular/angular/pulls) for an open or closed PR
@@ -69,9 +61,9 @@ Before you submit your Pull Request (PR) consider the following guidelines:
      ```
 
 1. Create your patch, **including appropriate test cases**.
-1. Follow our [Coding Rules](#rules).
+1. Follow our [Coding Rules](/contributing#coding-rules).
 1. Commit your changes using a descriptive commit message that follows our
-  [commit message conventions](#commit). Adherence to these conventions
+  [commit message conventions](/contributing#commit-message-format). Adherence to these conventions
   is necessary because release notes will be automatically generated from these messages (eventually).
 
      ```shell
@@ -125,13 +117,13 @@ from the main (upstream) repository:
     git pull --ff upstream main
     ```
 
-## <a name="rules"></a> Coding Rules
+## Coding Rules
 To ensure consistency throughout the source code, keep these rules in mind as you are working:
 
 * All features or bug fixes **must be tested** by one or more specs (unit-tests).
 * All commands **must be documented** using cobra generated documentation.
 
-## <a name="commit"></a> Commit Message Guidelines
+## Commit Message Guidelines
 
 We follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) for out commit messages. This leads to **more
 readable messages** that are easy to follow when looking through the **project history**.

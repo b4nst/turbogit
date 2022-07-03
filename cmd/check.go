@@ -42,9 +42,9 @@ func init() {
 
 var CheckCmd = &cobra.Command{
 	Use:   "check",
-	Short: "Check the history to follow conventional commit",
+	Short: "Ensure the history follows conventional commit",
 	Example: `
-# Check if all is ok
+# Run a check from HEAD
 $ tug check
 `,
 	Args: cobra.NoArgs,

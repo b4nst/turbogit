@@ -32,6 +32,7 @@ test: $(BUILD_FILES)
 
 doc:
 	$(GORUN) scripts/gen-doc.go
+	cd dist/doc; doctave build --release
 .PHONY: doc
 
 clean:
