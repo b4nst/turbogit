@@ -33,11 +33,13 @@ import (
 )
 
 func init() {
-	cmdbuilder.RepoAware(RootCmd)
+	RootCmd.AddCommand(NewCmd)
+
+	cmdbuilder.RepoAware(NewCmd)
 }
 
-// RootCmd represents the base command when called without any subcommands
-var RootCmd = &cobra.Command{
+// NewCmd represents the base command when called without any subcommands
+var NewCmd = &cobra.Command{
 	Use:   "new [type] [description]",
 	Short: "Start a new branch.",
 	Long: `
@@ -47,13 +49,13 @@ If type=user(s), a prefix with your git username will be added to the branch nam
 	`,
 	Example: `
 # Start new feature feat/my-feature from current branch
-$ git new feat my feature
+$ tug new feat my feature
 
 # Start working on a user branch (my-branch). This will create user/alice/my-branch, given that alice is your git username
-$ tug branch user my branch
+$ tug new user my branch
 
 # Start working on a new issue (an issue provider must be configured on the repositoty)
-$ tug branch
+$ tug new
 	`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 1 {
@@ -61,16 +63,16 @@ $ tug branch
 		}
 		return nil
 	},
-	Run: run,
+	Run: runNew,
 }
 
-type option struct {
+type newOpt struct {
 	NewBranch format.TugBranch
 	Repo      *git.Repository
 }
 
-func run(cmd *cobra.Command, args []string) {
-	opt := &option{}
+func runNew(cmd *cobra.Command, args []string) {
+	opt := &newOpt{}
 	var err error
 
 	opt.Repo = cmdbuilder.GetRepo(cmd)
@@ -99,7 +101,7 @@ func run(cmd *cobra.Command, args []string) {
 	cobra.CheckErr(gnew(opt))
 }
 
-func gnew(opt *option) error {
+func gnew(opt *newOpt) error {
 	r := opt.Repo
 
 	var t *git.Commit = nil
