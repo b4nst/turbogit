@@ -42,7 +42,6 @@ jobs:
     needs: create_release
     env:
       GOARCH: ${{ matrix.goarch }}
-      ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
     steps:
       - name: Set up Go 1.x
         uses: actions/setup-go@v2
@@ -59,11 +58,14 @@ jobs:
           TUG_VERSION: ${{ needs.create_release.outputs.tag }}
         run: make build
       - name: Package
+        env:
+          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
         run: tar -zcvf ${ASSET_NAME} -C bin/ .
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
           asset_path: ./${{ env.ASSET_NAME }}
