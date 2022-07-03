@@ -55,7 +55,7 @@ func main() {
 	log.Println("Ensure commands dir exists...")
 	checkErr(os.MkdirAll(cmdDir, 0700))
 	log.Println("Generate commands documentation...")
-	checkErr(doc.GenMarkdownTree(cmd.Command, cmdDir))
+	checkErr(doc.GenMarkdownTree(cmd.RootCmd, cmdDir))
 
 	log.Println("Generate nav bar...")
 	doctave.Navigation = []Nav{
