@@ -1,13 +1,11 @@
 package integrations
 
 import (
-	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/andygrunwald/go-jira"
 	"github.com/briandowns/spinner"
-	"github.com/go-git/go-git/v5/plumbing/format/config"
+	git "github.com/libgit2/git2go/v33"
 )
 
 const (
@@ -48,21 +46,28 @@ func (jp JiraProvider) Search() ([]IssueDescription, error) {
 	return res, nil
 }
 
-func jiraProvider(c *config.Config) (*JiraProvider, error) {
-	s := c.Section("jira")
-	enable, err := strconv.ParseBool(s.Option("enable"))
-	if err != nil {
-		return nil, fmt.Errorf("bad config format: %w", err)
-	}
+func jiraProvider(c *git.Config) (*JiraProvider, error) {
+	enable, _ := c.LookupBool("jira.enable")
 	if !enable {
 		return nil, nil
 	}
 
-	username := s.Option("username")
-	token := s.Option("token")
-	domain := s.Option("domain")
-	filter := s.Option("filter")
-	fmt.Println("Jira", enable, username, token, domain, filter)
+	username, err := c.LookupString("jira.username")
+	if err != nil {
+		return nil, err
+	}
+	token, err := c.LookupString("jira.token")
+	if err != nil {
+		return nil, err
+	}
+	domain, err := c.LookupString("jira.domain")
+	if err != nil {
+		return nil, err
+	}
+	filter, err := c.LookupString("jira.filter")
+	if err != nil {
+		return nil, err
+	}
 
 	tp := jira.BasicAuthTransport{
 		Username: username,

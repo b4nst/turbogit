@@ -23,15 +23,18 @@ package cmd
 
 import (
 	"errors"
-	"log"
 	"strings"
 
+	"github.com/b4nst/turbogit/internal/cmdbuilder"
 	"github.com/b4nst/turbogit/pkg/format"
 	"github.com/b4nst/turbogit/pkg/integrations"
-	git "github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
+	git "github.com/libgit2/git2go/v33"
 	"github.com/spf13/cobra"
 )
+
+func init() {
+	cmdbuilder.RepoAware(RootCmd)
+}
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -58,7 +61,7 @@ $ tug branch
 		}
 		return nil
 	},
-	Run: runCmd,
+	Run: run,
 }
 
 type option struct {
@@ -66,72 +69,72 @@ type option struct {
 	Repo      *git.Repository
 }
 
-func runCmd(cmd *cobra.Command, args []string) {
-	bco, err := parseCmd(cmd, args)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = run(bco)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
+func run(cmd *cobra.Command, args []string) {
+	opt := &option{}
+	var err error
 
-func parseCmd(cmd *cobra.Command, args []string) (*option, error) {
-	// Find repo
-	repo, err := git.PlainOpenWithOptions("", &git.PlainOpenOptions{
-		DetectDotGit:          true,
-		EnableDotGitCommonDir: true,
-	})
-	if err != nil {
-		return nil, err
-	}
+	opt.Repo = cmdbuilder.GetRepo(cmd)
 
-	var nb format.TugBranch
-
-	if len(args) == 0 {
-		nb, err = promptProviderBranch(repo)
-		if err != nil {
-			return nil, err
-		}
+	if len(args) <= 0 {
+		opt.NewBranch, err = promptProviderBranch(opt.Repo)
+		cobra.CheckErr(err)
 	} else {
-		nb = format.TugBranch{
-			Description: strings.Join(args[1:], " "),
-		}.WithType(args[0], format.DefaultTypeRewrite)
+		opt.NewBranch = format.TugBranch{Description: strings.Join(args[1:], " ")}.
+			WithType(args[0], format.DefaultTypeRewrite)
 	}
 
 	// User(s) branch
-	if nb.Type == "user" || nb.Type == "users" {
+	if opt.NewBranch.Type == "user" || opt.NewBranch.Type == "users" {
 		// Get user name from config
-		config, err := repo.Config()
-		if err != nil {
-			return nil, err
-		}
-		username := config.User.Name
+		config, err := opt.Repo.Config()
+		cobra.CheckErr(err)
+
+		username, _ := config.LookupString("user.name")
 		if username == "" {
-			return nil, errors.New("You need to configure your username before creating a user branch.")
+			cobra.CheckErr("You need to configure your username before creating a user branch.")
 		}
-		nb.Prefix = username
+		opt.NewBranch.Prefix = username
 	}
 
-	return &option{
-		NewBranch: nb,
-		Repo:      repo,
-	}, nil
+	cobra.CheckErr(gnew(opt))
 }
 
-func run(opt *option) error {
+func gnew(opt *option) error {
 	r := opt.Repo
-	w, err := r.Worktree()
+
+	var t *git.Commit = nil
+	head, err := r.Head()
+	if err == nil {
+		t, err = r.LookupCommit(head.Target())
+		if err != nil {
+			return err
+		}
+	}
+	if t == nil {
+		return errors.New("No commit to create branch from, please create the initial commit")
+	}
+
+	// Create new branch
+	b, err := r.CreateBranch(opt.NewBranch.String(), t, false)
+	if err != nil {
+		return err
+	}
+	bc, err := r.LookupCommit(b.Target())
+	if err != nil {
+		return err
+	}
+	tree, err := r.LookupTree(bc.TreeId())
 	if err != nil {
 		return err
 	}
 
-	return w.Checkout(&git.CheckoutOptions{
-		Branch: plumbing.NewBranchReferenceName(opt.NewBranch.String()),
-		Create: true,
-		Keep:   true,
-	})
+	// Checkout the branch
+	err = r.CheckoutTree(tree, &git.CheckoutOpts{Strategy: git.CheckoutSafe})
+	if err != nil {
+		return err
+	}
+	err = r.SetHead(b.Reference.Name())
+	return err
 }
 
 func promptProviderBranch(repo *git.Repository) (nb format.TugBranch, err error) {
