@@ -37,7 +37,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        goarch: [amd64, arm64]
+        goarch: [amd64]
     runs-on: ${{ matrix.os }}
     needs: create_release
     env:

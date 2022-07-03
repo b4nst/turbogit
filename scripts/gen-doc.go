@@ -36,9 +36,10 @@ func main() {
 	log.Println("Prepare doctave structure...")
 	checkErr(os.MkdirAll(IncludeDir, 0700))
 	doctave := Doctave{
-		Title:  "Turbogit",
-		Colors: Colors{Main: "#e96900"},
-		Logo:   "assets/tu_logo.png",
+		Title:    "Turbogit",
+		Colors:   Colors{Main: "#e96900"},
+		Logo:     "assets/tu_logo.png",
+		BasePath: "/turbogit",
 	}
 
 	log.Println("Copy assets...")
@@ -51,12 +52,11 @@ func main() {
 	_, err = Copy(path.Join(DocsDir, "code-of-conduct.md"), "CODE_OF_CONDUCT.md", "Code of conduct")
 	_, err = Copy(path.Join(DocsDir, "README.md"), "README.md", "")
 	_, err = Copy(path.Join(DocsDir, "installation.md"), "assets/docs/installation.md", "Installation")
-	_, err = Copy(path.Join(DocsDir, "usage.md"), "assets/docs/usage.md", "Usage")
 	_, err = Copy(path.Join(DocsDir, "integration.md"), "assets/docs/integration.md", "Integration")
 	_, err = Copy(path.Join(DocsDir, "shell-completion.md"), "assets/docs/shell-completion.md", "Shell completion")
 	checkErr(err)
 
-	cmdDir := path.Join(DocsDir, "Commands")
+	cmdDir := path.Join(DocsDir, "commands")
 	log.Println("Ensure commands dir exists...")
 	checkErr(os.MkdirAll(cmdDir, 0700))
 	log.Println("Generate commands documentation...")
@@ -67,17 +67,16 @@ func main() {
 	}
 	linkHandler := func(name string) string {
 		base := strings.TrimSuffix(name, path.Ext(name))
-		return "/Commands/" + strings.ToLower(base)
+		return "/commands/" + strings.ToLower(base)
 	}
 	checkErr(doc.GenMarkdownTreeCustom(cmd.RootCmd, cmdDir, filePrepender, linkHandler))
+	_, err = Copy(path.Join(cmdDir, "README.md"), "assets/docs/usage.md", "Usage")
+	checkErr(err)
 
 	log.Println("Generate nav bar...")
 	doctave.Navigation = []Nav{
 		{
 			Path: "docs/installation.md",
-		},
-		{
-			Path: "docs/usage.md",
 		},
 		{
 			Path:     strings.TrimPrefix(cmdDir, Workdir+"/"),

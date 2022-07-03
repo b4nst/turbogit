@@ -1,24 +1,23 @@
 # Usage
 
 ```shell
-Improve your git workflow.
+Set of opinionated git plugins.
 
 Usage:
   tug [command]
 
 Available Commands:
-  branch      Create a new branch
   check       Check the history to follow conventional commit
-  commit      Commit staging area
-  completion  Generate completion script
+  commit      Commit using conventional commit message
+  completion  Generate the autocompletion script for the specified shell
   help        Help about any command
-  log         Shows the commit logs.
-  tag         Create a tag
+  logs        Shows the commit logs.
+  new         Start a new branch.
+  release     Release a SemVer tag based on the commit history.
   version     Print current version
 
 Flags:
-      --config string   config file (default is $HOME/.config/tug/tug.toml)
-  -h, --help            help for tug
+  -h, --help   help for tug
 
 Use "tug [command] --help" for more information about a command.
 ```
