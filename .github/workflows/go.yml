@@ -69,3 +69,34 @@ jobs:
         env:
           CC_TEST_REPORTER_ID: ${{ secrets.CC_TEST_REPORTER_ID }}
         run: ./cc-reporter after-build --coverage-input-type gocov -p github.com/b4nst/turbogit
+
+  doc:
+    name: Deploy documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.17
+        id: go
+      - uses: supplypike/setup-bin@v1
+        name: Install doctave
+        with:
+          uri: https://github.com/Doctave/doctave/releases/download/0.4.2/doctave-0.4.2-x86_64-unknown-linux-musl.tar.gz
+          name: doctave
+          version: 0.4.2
+      - name: Build
+        run: make doc
+      - name: Deploy (dry-run)
+        if: success()
+        uses: crazy-max/ghaction-github-pages@v3
+        with:
+          target_branch: gh-pages
+          build_dir: dist/doc/build
+          dry_run: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

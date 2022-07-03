@@ -39,6 +39,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         goarch: [amd64, arm64]
     runs-on: ${{ matrix.os }}
+    needs: create_release
     env:
       GOARCH: ${{ matrix.goarch }}
       ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
