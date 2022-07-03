@@ -63,7 +63,36 @@ $ tug new
 		}
 		return nil
 	},
-	Run: runNew,
+
+	Run: func(cmd *cobra.Command, args []string) {
+		opt := &newOpt{}
+		var err error
+
+		opt.Repo = cmdbuilder.GetRepo(cmd)
+
+		if len(args) <= 0 {
+			opt.NewBranch, err = promptProviderBranch(opt.Repo)
+			cobra.CheckErr(err)
+		} else {
+			opt.NewBranch = format.TugBranch{Description: strings.Join(args[1:], " ")}.
+				WithType(args[0], format.DefaultTypeRewrite)
+		}
+
+		// User(s) branch
+		if opt.NewBranch.Type == "user" || opt.NewBranch.Type == "users" {
+			// Get user name from config
+			config, err := opt.Repo.Config()
+			cobra.CheckErr(err)
+
+			username, _ := config.LookupString("user.name")
+			if username == "" {
+				cobra.CheckErr("You need to configure your username before creating a user branch.")
+			}
+			opt.NewBranch.Prefix = username
+		}
+
+		cobra.CheckErr(runNew(opt))
+	},
 }
 
 type newOpt struct {
@@ -71,37 +100,7 @@ type newOpt struct {
 	Repo      *git.Repository
 }
 
-func runNew(cmd *cobra.Command, args []string) {
-	opt := &newOpt{}
-	var err error
-
-	opt.Repo = cmdbuilder.GetRepo(cmd)
-
-	if len(args) <= 0 {
-		opt.NewBranch, err = promptProviderBranch(opt.Repo)
-		cobra.CheckErr(err)
-	} else {
-		opt.NewBranch = format.TugBranch{Description: strings.Join(args[1:], " ")}.
-			WithType(args[0], format.DefaultTypeRewrite)
-	}
-
-	// User(s) branch
-	if opt.NewBranch.Type == "user" || opt.NewBranch.Type == "users" {
-		// Get user name from config
-		config, err := opt.Repo.Config()
-		cobra.CheckErr(err)
-
-		username, _ := config.LookupString("user.name")
-		if username == "" {
-			cobra.CheckErr("You need to configure your username before creating a user branch.")
-		}
-		opt.NewBranch.Prefix = username
-	}
-
-	cobra.CheckErr(gnew(opt))
-}
-
-func gnew(opt *newOpt) error {
+func runNew(opt *newOpt) error {
 	r := opt.Repo
 
 	var t *git.Commit = nil

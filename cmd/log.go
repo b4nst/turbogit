@@ -29,14 +29,16 @@ import (
 	"time"
 
 	"github.com/araddon/dateparse"
+	"github.com/b4nst/turbogit/internal/cmdbuilder"
 	"github.com/b4nst/turbogit/pkg/format"
-	tugit "github.com/b4nst/turbogit/pkg/git"
 	git "github.com/libgit2/git2go/v33"
 	"github.com/spf13/cobra"
 )
 
 func init() {
 	RootCmd.AddCommand(LogCmd)
+
+	cmdbuilder.RepoAware(LogCmd)
 
 	LogCmd.Flags().BoolP("all", "a", false, "Pretend as if all the refs in refs/, along with HEAD, are listed on the command line as <commit>. If set on true, the --from option will be ignored.")
 	LogCmd.Flags().Bool("no-color", false, "Disable color output")
@@ -48,6 +50,19 @@ func init() {
 	LogCmd.Flags().StringArrayP("type", "t", []string{}, "Filter commits by type (repeatable option)")
 	LogCmd.Flags().StringArrayP("scope", "s", []string{}, "Filter commits by scope (repeatable option)")
 	LogCmd.Flags().BoolP("breaking-changes", "c", false, "Only shows breaking changes")
+}
+
+// LogCmd represents the log command
+var LogCmd = &cobra.Command{
+	Use:   "logs",
+	Short: "Shows the commit logs.",
+	Args:  cobra.NoArgs,
+
+	Run: func(cmd *cobra.Command, args []string) {
+		opt, err := parseCmd(cmd, args)
+		cobra.CheckErr(err)
+		cobra.CheckErr(runLog(opt))
+	},
 }
 
 type logOpt struct {
@@ -62,33 +77,22 @@ type logOpt struct {
 	Repo           *git.Repository
 }
 
-// LogCmd represents the log command
-var LogCmd = &cobra.Command{
-	Use:   "logs",
-	Short: "Shows the commit logs.",
-	Args:  cobra.NoArgs,
-	Run:   runLog,
-}
-
-func runLog(cmd *cobra.Command, args []string) {
-	opt, err := parseCmd(cmd, args)
-	cobra.CheckErr(err)
-	cobra.CheckErr(doLog(opt))
-}
-
 func parseCmd(cmd *cobra.Command, args []string) (*logOpt, error) {
+	opt := &logOpt{}
+	var err error
+
 	// --all
-	fAll, err := cmd.Flags().GetBool("all")
+	opt.All, err = cmd.Flags().GetBool("all")
 	if err != nil {
 		return nil, err
 	}
 	// --no-color
-	fNoColor, err := cmd.Flags().GetBool("no-color")
+	opt.NoColor, err = cmd.Flags().GetBool("no-color")
 	if err != nil {
 		return nil, err
 	}
 	// --from
-	fFrom, err := cmd.Flags().GetString("from")
+	opt.From, err = cmd.Flags().GetString("from")
 	if err != nil {
 		return nil, err
 	}
@@ -97,26 +101,24 @@ func parseCmd(cmd *cobra.Command, args []string) (*logOpt, error) {
 	if err != nil {
 		return nil, err
 	}
-	var since *time.Time
 	if fSince != "" {
 		date, err := dateparse.ParseAny(fSince)
 		if err != nil {
 			return nil, err
 		}
-		since = &date
+		opt.Since = &date
 	}
 	// --until
 	fUntil, err := cmd.Flags().GetString("until")
 	if err != nil {
 		return nil, err
 	}
-	var until *time.Time
 	if fUntil != "" {
 		date, err := dateparse.ParseAny(fUntil)
 		if err != nil {
 			return nil, err
 		}
-		until = &date
+		opt.Until = &date
 	}
 	// --types
 	fTypes, err := cmd.Flags().GetStringArray("type")
@@ -124,42 +126,27 @@ func parseCmd(cmd *cobra.Command, args []string) (*logOpt, error) {
 		return nil, err
 
 	}
-	types := make([]format.CommitType, len(fTypes))
-	for i, v := range fTypes {
-		types[i] = format.FindCommitType(v)
+	for _, v := range fTypes {
+		opt.Types = append(opt.Types, format.FindCommitType(v))
 		// TODO warn or error on nil commit type
 	}
 	// --scopes
-	fScopes, err := cmd.Flags().GetStringArray("scope")
+	opt.Scopes, err = cmd.Flags().GetStringArray("scope")
 	if err != nil {
 		return nil, err
 	}
 	// --breaking-changes
-	fBreakingChanges, err := cmd.Flags().GetBool("breaking-changes")
+	opt.BreakingChange, err = cmd.Flags().GetBool("breaking-changes")
 	if err != nil {
 		return nil, err
 	}
 
-	// Find repo
-	repo, err := tugit.Getrepo()
-	if err != nil {
-		return nil, err
-	}
+	opt.Repo = cmdbuilder.GetRepo(cmd)
 
-	return &logOpt{
-		All:            fAll,
-		NoColor:        fNoColor,
-		From:           fFrom,
-		Since:          since,
-		Until:          until,
-		Types:          types,
-		Scopes:         fScopes,
-		BreakingChange: fBreakingChanges,
-		Repo:           repo,
-	}, nil
+	return opt, nil
 }
 
-func doLog(opt *logOpt) error {
+func runLog(opt *logOpt) error {
 	r := opt.Repo
 
 	walk, err := r.Walk()

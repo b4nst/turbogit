@@ -40,41 +40,40 @@ func init() {
 	cmdbuilder.RepoAware(CheckCmd)
 }
 
+var CheckCmd = &cobra.Command{
+	Use:   "check",
+	Short: "Check the history to follow conventional commit",
+	Example: `
+# Check if all is ok
+$ tug check
+`,
+	Args: cobra.NoArgs,
+
+	Run: func(cmd *cobra.Command, args []string) {
+		opt := &checkOpt{}
+		var err error
+
+		opt.All, err = cmd.Flags().GetBool("all")
+		cobra.CheckErr(err)
+
+		opt.From, err = cmd.Flags().GetString("from")
+		cobra.CheckErr(err)
+
+		opt.Repo = cmdbuilder.GetRepo(cmd)
+
+		cobra.CheckErr(runCheck(opt))
+
+		cmd.Println("repository compliant.")
+	},
+}
+
 type checkOpt struct {
 	All  bool
 	From string
 	Repo *git.Repository
 }
 
-var CheckCmd = &cobra.Command{
-	Use:   "check",
-	Short: "Check the history to follow conventional commit",
-	Example: `
-# Check if all is ok
-$ git check
-`,
-	Args: cobra.NoArgs,
-	Run:  run,
-}
-
-func run(cmd *cobra.Command, args []string) {
-	opt := &checkOpt{}
-	var err error
-
-	opt.All, err = cmd.Flags().GetBool("all")
-	cobra.CheckErr(err)
-
-	opt.From, err = cmd.Flags().GetString("from")
-	cobra.CheckErr(err)
-
-	opt.Repo = cmdbuilder.GetRepo(cmd)
-
-	cobra.CheckErr(check(opt))
-
-	cmd.Println("repository compliant.")
-}
-
-func check(opt *checkOpt) error {
+func runCheck(opt *checkOpt) error {
 	walk, err := opt.Repo.Walk()
 	if err != nil {
 		return err
