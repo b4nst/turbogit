@@ -9,13 +9,13 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/briandowns/spinner v1.18.1
 	github.com/fatih/color v1.13.0 // indirect
-	github.com/go-git/go-git/v5 v5.4.2
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-hclog v1.0.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hpcloud/golor v0.0.0-20150914221010-dc1b58c471a0
 	github.com/imdario/mergo v0.3.12
+	github.com/kr/text v0.2.0 // indirect
 	github.com/ktr0731/go-fuzzyfinder v0.5.1
 	github.com/libgit2/git2go/v33 v33.0.9
 	github.com/mattn/go-colorable v0.1.12 // indirect
@@ -31,7 +31,8 @@ require (
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
 
 replace github.com/libgit2/git2go/v33 => ./git2go
