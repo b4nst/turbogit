@@ -59,7 +59,50 @@ var LogCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		opt, err := parseCmd(cmd, args)
+		opt := &logOpt{}
+		var err error
+
+		// --all
+		opt.All, err = cmd.Flags().GetBool("all")
+		cobra.CheckErr(err)
+		// --no-color
+		opt.NoColor, err = cmd.Flags().GetBool("no-color")
+		cobra.CheckErr(err)
+		// --from
+		opt.From, err = cmd.Flags().GetString("from")
+		cobra.CheckErr(err)
+		// --since
+		fSince, err := cmd.Flags().GetString("since")
+		cobra.CheckErr(err)
+		if fSince != "" {
+			date, err := dateparse.ParseAny(fSince)
+			cobra.CheckErr(err)
+			opt.Since = &date
+		}
+		// --until
+		fUntil, err := cmd.Flags().GetString("until")
+		cobra.CheckErr(err)
+		if fUntil != "" {
+			date, err := dateparse.ParseAny(fUntil)
+			cobra.CheckErr(err)
+			opt.Until = &date
+		}
+		// --types
+		fTypes, err := cmd.Flags().GetStringArray("type")
+		cobra.CheckErr(err)
+		for _, v := range fTypes {
+			opt.Types = append(opt.Types, format.FindCommitType(v))
+			// TODO warn or error on nil commit type
+		}
+		// --scopes
+		opt.Scopes, err = cmd.Flags().GetStringArray("scope")
+		cobra.CheckErr(err)
+		// --breaking-changes
+		opt.BreakingChange, err = cmd.Flags().GetBool("breaking-changes")
+		cobra.CheckErr(err)
+
+		opt.Repo = cmdbuilder.GetRepo(cmd)
+
 		cobra.CheckErr(err)
 		cobra.CheckErr(runLog(opt))
 	},
@@ -75,75 +118,6 @@ type logOpt struct {
 	Scopes         []string
 	BreakingChange bool
 	Repo           *git.Repository
-}
-
-func parseCmd(cmd *cobra.Command, args []string) (*logOpt, error) {
-	opt := &logOpt{}
-	var err error
-
-	// --all
-	opt.All, err = cmd.Flags().GetBool("all")
-	if err != nil {
-		return nil, err
-	}
-	// --no-color
-	opt.NoColor, err = cmd.Flags().GetBool("no-color")
-	if err != nil {
-		return nil, err
-	}
-	// --from
-	opt.From, err = cmd.Flags().GetString("from")
-	if err != nil {
-		return nil, err
-	}
-	// --since
-	fSince, err := cmd.Flags().GetString("since")
-	if err != nil {
-		return nil, err
-	}
-	if fSince != "" {
-		date, err := dateparse.ParseAny(fSince)
-		if err != nil {
-			return nil, err
-		}
-		opt.Since = &date
-	}
-	// --until
-	fUntil, err := cmd.Flags().GetString("until")
-	if err != nil {
-		return nil, err
-	}
-	if fUntil != "" {
-		date, err := dateparse.ParseAny(fUntil)
-		if err != nil {
-			return nil, err
-		}
-		opt.Until = &date
-	}
-	// --types
-	fTypes, err := cmd.Flags().GetStringArray("type")
-	if err != nil {
-		return nil, err
-
-	}
-	for _, v := range fTypes {
-		opt.Types = append(opt.Types, format.FindCommitType(v))
-		// TODO warn or error on nil commit type
-	}
-	// --scopes
-	opt.Scopes, err = cmd.Flags().GetStringArray("scope")
-	if err != nil {
-		return nil, err
-	}
-	// --breaking-changes
-	opt.BreakingChange, err = cmd.Flags().GetBool("breaking-changes")
-	if err != nil {
-		return nil, err
-	}
-
-	opt.Repo = cmdbuilder.GetRepo(cmd)
-
-	return opt, nil
 }
 
 func runLog(opt *logOpt) error {
