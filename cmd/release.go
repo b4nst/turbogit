@@ -33,14 +33,16 @@ import (
 )
 
 func init() {
-	RootCmd.Flags().BoolP("dry-run", "d", false, "Do not tag.")
-	RootCmd.Flags().StringP("prefix", "p", "v", "Tag prefix.")
+	RootCmd.AddCommand(ReleaseCmd)
 
-	cmdbuilder.RepoAware(RootCmd)
+	ReleaseCmd.Flags().BoolP("dry-run", "d", false, "Do not tag.")
+	ReleaseCmd.Flags().StringP("prefix", "p", "v", "Tag prefix.")
+
+	cmdbuilder.RepoAware(ReleaseCmd)
 }
 
-// RootCmd represents the base command when called without any subcommands
-var RootCmd = &cobra.Command{
+// ReleaseCmd represents the base command when called without any subcommands
+var ReleaseCmd = &cobra.Command{
 	Use:   "release",
 	Short: "Release a SemVer tag based on the commit history.",
 	Example: `
@@ -50,10 +52,10 @@ $ git release
 `,
 	Args:         cobra.NoArgs,
 	SilenceUsage: true,
-	Run:          run,
+	Run:          runRelease,
 }
 
-func run(cmd *cobra.Command, args []string) {
+func runRelease(cmd *cobra.Command, args []string) {
 	// get options
 	dryrun, err := cmd.Flags().GetBool("dry-run")
 	cobra.CheckErr(err)
