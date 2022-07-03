@@ -15,7 +15,7 @@ BUILD_ARGS=-trimpath -tags=static -ldflags='$(LDFLAGS)'
 GOCMD=go
 GOBUILD=$(GOCMD) build $(BUILD_ARGS)
 GOTEST=$(GOCMD) test -tags=static
-GORUN=$(GOCMD) run
+GORUN=$(GOCMD) run -tags=static
 
 dist/bin/tug: $(BUILD_FILES)
 	$(GOBUILD) -o "$@" ./main.go
@@ -30,7 +30,7 @@ test: $(BUILD_FILES)
 	$(GOTEST) ./...  -coverprofile c.out
 .PHONY: test
 
-doc:
+doc: libgit2
 	$(GORUN) scripts/gen-doc.go
 	cd dist/doc; doctave build --release
 .PHONY: doc

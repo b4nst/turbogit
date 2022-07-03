@@ -83,6 +83,13 @@ jobs:
         with:
           go-version: ^1.17
         id: go
+      - name: Install doctave
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/bin
+          curl -sSL https://github.com/Doctave/doctave/releases/download/0.4.2/doctave-0.4.2-x86_64-unknown-linux-musl.tar.gz | tar xvz
+          mv doctave-0.4.2-x86_64-unknown-linux-musl/doctave $GITHUB_WORKSPACE/bin/doctave
+          chmod +x $GITHUB_WORKSPACE/bin/doctave
+          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
       - uses: supplypike/setup-bin@v1
         name: Install doctave
         with:
@@ -96,7 +103,7 @@ jobs:
         uses: crazy-max/ghaction-github-pages@v3
         with:
           target_branch: gh-pages
-          build_dir: dist/doc/build
+          build_dir: dist/doc/site
           dry_run: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
