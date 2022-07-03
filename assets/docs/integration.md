@@ -41,7 +41,7 @@ First set the proper configuration to activate GitLab integration.
 Then you just have to
 
 ```shell
-git new
+tug new
 ```
 
 It will prompt you a list of issues with a fuzzy finder at your disposal to refine your selection.
@@ -81,7 +81,7 @@ First set the proper configuration to activate Jira integration.
 Then you just have to
 
 ```shell
-git new
+tug new
 ```
 
 It will prompt you a list of issues matching `jira.filter` with a fuzzy finder at your disposal to refine your selection.
