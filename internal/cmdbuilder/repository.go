@@ -20,6 +20,14 @@ func RepoAware(cmd *cobra.Command) {
 	AppendPreRun(cmd, repoPreRun)
 }
 
+func MockRepoAware(cmd *cobra.Command, repo *git.Repository) {
+	parent := cmd.Context()
+	if parent == nil {
+		parent = context.TODO()
+	}
+	cmd.SetContext(context.WithValue(parent, repoKey{}, repo))
+}
+
 func repoPreRun(cmd *cobra.Command, args []string) {
 	repo, err := tugit.Getrepo()
 	cobra.CheckErr(err)

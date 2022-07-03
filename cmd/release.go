@@ -52,39 +52,60 @@ $ git release
 `,
 	Args:         cobra.NoArgs,
 	SilenceUsage: true,
-	Run:          runRelease,
+
+	Run: func(cmd *cobra.Command, args []string) {
+		opt := &releaseOpt{}
+		var err error
+
+		opt.DryRun, err = cmd.Flags().GetBool("dry-run")
+		cobra.CheckErr(err)
+		opt.Prefix, err = cmd.Flags().GetString("prefix")
+		cobra.CheckErr(err)
+		opt.Repo = cmdbuilder.GetRepo(cmd)
+
+		cobra.CheckErr(runRelease(opt))
+	},
 }
 
-func runRelease(cmd *cobra.Command, args []string) {
-	// get options
-	dryrun, err := cmd.Flags().GetBool("dry-run")
-	cobra.CheckErr(err)
-	prefix, err := cmd.Flags().GetString("prefix")
-	cobra.CheckErr(err)
-	r := cmdbuilder.GetRepo(cmd)
+type releaseOpt struct {
+	DryRun bool
+	Prefix string
+	Repo   *git.Repository
+}
 
+func runRelease(opt *releaseOpt) error {
 	// initialize walker
-	walk, err := r.Walk()
-	cobra.CheckErr(err)
-	cobra.CheckErr(walk.PushHead())
+	walk, err := opt.Repo.Walk()
+	if err != nil {
+		return err
+	}
+	if err := walk.PushHead(); err != nil {
+		return err
+	}
 
 	// find next version
 	bump := format.BUMP_NONE
 	curr := semver.Version{}
-	walker, err := commitWalker(&bump, &curr, prefix)
-	cobra.CheckErr(err)
-	cobra.CheckErr(walk.Iterate(walker))
+	walker, err := commitWalker(&bump, &curr, opt.Prefix)
+	if err != nil {
+		return err
+	}
+	if err := walk.Iterate(walker); err != nil {
+		return err
+	}
 
 	if bump == format.BUMP_NONE {
 		fmt.Println("Nothing to do")
-		return
+		return nil
 	}
 	// Bump tag
-	cobra.CheckErr(bumpVersion(&curr, bump))
+	if err := bumpVersion(&curr, bump); err != nil {
+		return err
+	}
 
 	// do tag
-	tagname := fmt.Sprintf("refs/tags/%s%s", prefix, curr)
-	cobra.CheckErr(tagHead(r, tagname, dryrun))
+	tagname := fmt.Sprintf("refs/tags/%s%s", opt.Prefix, curr)
+	return tagHead(opt.Repo, tagname, opt.DryRun)
 }
 
 func tagHead(r *git.Repository, tagname string, dry bool) error {

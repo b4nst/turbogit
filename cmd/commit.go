@@ -23,10 +23,10 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/b4nst/turbogit/internal/cmdbuilder"
 	"github.com/b4nst/turbogit/pkg/format"
 	tugit "github.com/b4nst/turbogit/pkg/git"
 	git "github.com/libgit2/git2go/v33"
@@ -35,6 +35,8 @@ import (
 
 func init() {
 	RootCmd.AddCommand(CommitCmd)
+
+	cmdbuilder.RepoAware(CommitCmd)
 
 	CommitCmd.Flags().StringP("type", "t", "", fmt.Sprintf("Commit types %s", format.AllCommitType()))
 	CommitCmd.RegisterFlagCompletionFunc("type", typeFlagCompletion)
@@ -46,23 +48,6 @@ func init() {
 
 func typeFlagCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	return format.AllCommitType(), cobra.ShellCompDirectiveDefault
-}
-
-type commitOpt struct {
-	// Commit type
-	CType format.CommitType
-	// True if this commit introduces breaking changes
-	BreakingChanges bool
-	// Should prompt an editor before committing
-	PromptEditor bool
-	// Commit scope (optional)
-	Scope string
-	// Commit message
-	Message string
-	// Amend
-	Amend bool
-	// Current repository
-	Repo *git.Repository
 }
 
 var CommitCmd = &cobra.Command{
@@ -102,74 +87,79 @@ $ tug commit -a -t fix
 	},
 	// SilenceUsage: true,
 	ValidArgs: format.AllCommitType(),
-	Run:       runCommitCmd,
+
+	Run: func(cmd *cobra.Command, args []string) {
+		cco, err := parseCommitCmd(cmd, args)
+		cobra.CheckErr(err)
+		cobra.CheckErr(runCommit(cco))
+	},
 }
 
-func runCommitCmd(cmd *cobra.Command, args []string) {
-	cco, err := parseCommitCmd(cmd, args)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = runCommit(cco)
-	if err != nil {
-		log.Fatal(err)
-	}
+type commitOpt struct {
+	// Commit type
+	CType format.CommitType
+	// True if this commit introduces breaking changes
+	BreakingChanges bool
+	// Should prompt an editor before committing
+	PromptEditor bool
+	// Commit scope (optional)
+	Scope string
+	// Commit message
+	Message string
+	// Amend
+	Amend bool
+	// Current repository
+	Repo *git.Repository
 }
 
 func parseCommitCmd(cmd *cobra.Command, args []string) (*commitOpt, error) {
+	opt := &commitOpt{}
+	var err error
+
 	// --type
 	fType, err := cmd.Flags().GetString("type")
 	if err != nil {
 		return nil, err
 	}
-	ctype := format.FindCommitType(fType)
-	if ctype == format.NilCommit && len(args) > 0 {
-		ctype = format.FindCommitType(args[0])
-		if ctype != format.NilCommit {
+	opt.CType = format.FindCommitType(fType)
+	if opt.CType == format.NilCommit && len(args) > 0 {
+		opt.CType = format.FindCommitType(args[0])
+		if opt.CType != format.NilCommit {
 			// Type was in first arg
 			args = args[1:]
 		}
 	}
 
 	// --breaking-changes
-	fBreakingChanges, err := cmd.Flags().GetBool("breaking-changes")
+	opt.BreakingChanges, err = cmd.Flags().GetBool("breaking-changes")
 	if err != nil {
 		return nil, err
 	}
 
 	// --scope
-	fScope, err := cmd.Flags().GetString("scope")
+	opt.Scope, err = cmd.Flags().GetString("scope")
 	if err != nil {
 		return nil, err
 	}
 
 	// --edit
-	fEdit, err := cmd.Flags().GetBool("edit")
+	opt.PromptEditor, err = cmd.Flags().GetBool("edit")
 	if err != nil {
 		return nil, err
 	}
 
 	// --amend
-	fAmend, err := cmd.Flags().GetBool("amend")
+	opt.Amend, err = cmd.Flags().GetBool("amend")
 	if err != nil {
 		return nil, err
 	}
 
 	// Find repo
-	repo, err := tugit.Getrepo()
-	if err != nil {
-		return nil, err
-	}
+	opt.Repo = cmdbuilder.GetRepo(cmd)
 
-	return &commitOpt{
-		CType:           ctype,
-		BreakingChanges: fBreakingChanges,
-		Message:         strings.Join(args, " "),
-		PromptEditor:    fEdit,
-		Scope:           fScope,
-		Amend:           fAmend,
-		Repo:            repo,
-	}, nil
+	opt.Message = strings.Join(args, " ")
+
+	return opt, nil
 }
 
 func runCommit(cco *commitOpt) error {

@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/b4nst/turbogit/internal/cmdbuilder"
 	"github.com/b4nst/turbogit/pkg/format"
 	"github.com/b4nst/turbogit/pkg/test"
 	"github.com/spf13/cobra"
@@ -22,6 +23,8 @@ func TestParseCommitCmd(t *testing.T) {
 	cmd.Flags().BoolP("edit", "e", true, "")
 	cmd.Flags().StringP("scope", "s", "scope", "")
 	cmd.Flags().BoolP("amend", "a", true, "")
+
+	cmdbuilder.MockRepoAware(cmd, r)
 
 	cco, err := parseCommitCmd(cmd, []string{"hello", "world!"})
 	require.NoError(t, err)
