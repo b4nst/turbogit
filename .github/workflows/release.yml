@@ -53,19 +53,23 @@ jobs:
         with:
           submodules: recursive
       - name: Build
+        id: build
         env:
           TUG_COMMIT: ${{ github.sha }}
           TUG_VERSION: ${{ needs.create_release.outputs.tag }}
-        run: make build
+          RAW_TAG: ${{ needs.create_release.outputs.raw_tag }}
+        run: |
+          make build
+          echo ::set-output name=ASSET_NAME::turbogit_${RAW_TAG}_${GOOS}_${GOARCH}.tar.gz
       - name: Package
         env:
-          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
+          ASSET_NAME: ${{ steps.build.outputs.ASSET_NAME }}
         run: tar -zcvf ${ASSET_NAME} -C dist/bin/ .
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ASSET_NAME: ${{ format('turbogit_{0}_{2}_{1}.tar.gz', needs.create_release.outputs.raw_tag, env.GOOS, env.GOARCH) }}
+          ASSET_NAME: ${{ steps.build.outputs.ASSET_NAME }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
           asset_path: ./${{ env.ASSET_NAME }}

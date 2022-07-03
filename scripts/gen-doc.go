@@ -50,7 +50,7 @@ func main() {
 	log.Println("Copy static documentation")
 	_, err = Copy(path.Join(DocsDir, "contributing.md"), "CONTRIBUTING.md", "Contributing")
 	_, err = Copy(path.Join(DocsDir, "code-of-conduct.md"), "CODE_OF_CONDUCT.md", "Code of conduct")
-	_, err = Copy(path.Join(DocsDir, "README.md"), "README.md", "")
+	_, err = Copy(path.Join(DocsDir, "README.md"), "README.md", "Turbogit")
 	_, err = Copy(path.Join(DocsDir, "installation.md"), "assets/docs/installation.md", "Installation")
 	_, err = Copy(path.Join(DocsDir, "integration.md"), "assets/docs/integration.md", "Integration")
 	_, err = Copy(path.Join(DocsDir, "shell-completion.md"), "assets/docs/shell-completion.md", "Shell completion")
@@ -106,6 +106,16 @@ func main() {
 	checkErr(err)
 	defer nj.Close()
 	_, err = Copy(path.Join(IncludeDir, "favicon.ico"), path.Join(AssetsSrcDir, "tu_logo.ico"), "")
+
+	log.Println("Add head tags")
+	headTmpl := `
+ <link rel="shortcut icon" type="image/x-icon" href="%s">
+ `
+	head, err := os.Create(path.Join(IncludeDir, "_head.html"))
+	checkErr(err)
+	defer head.Close()
+	_, err = head.WriteString(fmt.Sprintf(headTmpl, path.Join("/", doctave.BasePath, "favicon.ico")))
+	checkErr(err)
 
 	log.Println("Done.")
 	log.Println("Use 'doctave serve' or 'doctave build'")
