@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
-	github.com/andygrunwald/go-jira v1.15.0
+	github.com/andygrunwald/go-jira v1.16.0
 	github.com/araddon/dateparse v0.0.0-20201001162425-8aadafed4dc4
 	github.com/blang/semver/v4 v4.0.0
 	github.com/briandowns/spinner v1.19.0
