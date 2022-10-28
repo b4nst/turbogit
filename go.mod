@@ -20,7 +20,7 @@ require (
 	github.com/libgit2/git2go/v33 v33.0.9
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/spf13/cobra v1.4.1-0.20220414043027-bf6cb5804d7a
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.8.1
 	github.com/whilp/git-urls v1.0.0
 	github.com/xanzy/go-gitlab v0.54.4
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
@@ -32,7 +32,7 @@ require (
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 replace github.com/libgit2/git2go/v33 => ./git2go
