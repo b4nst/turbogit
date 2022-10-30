@@ -9,8 +9,6 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/briandowns/spinner v1.19.0
 	github.com/fatih/color v1.13.0 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-hclog v1.0.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hpcloud/golor v0.0.0-20150914221010-dc1b58c471a0
@@ -22,11 +20,7 @@ require (
 	github.com/spf13/cobra v1.4.1-0.20220414043027-bf6cb5804d7a
 	github.com/stretchr/testify v1.8.1
 	github.com/whilp/git-urls v1.0.0
-	github.com/xanzy/go-gitlab v0.54.4
-	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
-	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
-	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.27.1 // indirect
+	github.com/xanzy/go-gitlab v0.74.0
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.1
 )
