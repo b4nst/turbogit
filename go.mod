@@ -17,11 +17,12 @@ require (
 	github.com/ktr0731/go-fuzzyfinder v0.7.0
 	github.com/libgit2/git2go/v33 v33.0.9
 	github.com/mattn/go-colorable v0.1.12 // indirect
-	github.com/spf13/cobra v1.4.1-0.20220414043027-bf6cb5804d7a
+	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	github.com/whilp/git-urls v1.0.0
 	github.com/xanzy/go-gitlab v0.74.0
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1
 )
 
