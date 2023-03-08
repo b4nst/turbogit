@@ -20,7 +20,7 @@ require (
 	github.com/spf13/cobra v1.4.1-0.20220414043027-bf6cb5804d7a
 	github.com/stretchr/testify v1.8.1
 	github.com/whilp/git-urls v1.0.0
-	github.com/xanzy/go-gitlab v0.74.0
+	github.com/xanzy/go-gitlab v0.80.3
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.1
 )
