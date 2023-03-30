@@ -24,6 +24,7 @@ const (
 	RefactorCommit
 	StyleCommit
 	TestCommit
+	AutoCommit
 )
 
 func (b CommitType) String() string {
@@ -39,6 +40,7 @@ func (b CommitType) String() string {
 		"refactor",
 		"style",
 		"test",
+		"auto",
 	}[b]
 }
 
@@ -74,6 +76,7 @@ func AllCommitType() []string {
 		RefactorCommit.String(),
 		StyleCommit.String(),
 		TestCommit.String(),
+		AutoCommit.String(),
 	}
 }
 
@@ -88,6 +91,7 @@ var (
 	refactorCommitRe = regexp.MustCompile(`(?i)^r(?:efactors?)?$`)
 	styleCommitRe    = regexp.MustCompile(`(?i)^s(?:tyles?)?$`)
 	testCommitRe     = regexp.MustCompile(`(?i)^t(?:ests?)?$`)
+	autoCommitRe     = regexp.MustCompile(`(?i)^auto$`)
 )
 
 type CommitMessageOption struct {
@@ -175,6 +179,8 @@ func FindCommitType(str string) CommitType {
 		return StyleCommit
 	case testCommitRe.Match(s):
 		return TestCommit
+	case autoCommitRe.Match(s):
+		return AutoCommit
 	default:
 		return NilCommit
 	}

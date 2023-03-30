@@ -138,6 +138,8 @@ func TestFindCommitType(t *testing.T) {
 		"T":     {"t", TestCommit},
 		"Test":  {"Test", TestCommit},
 		"Tests": {"tests", TestCommit},
+
+		"Auto": {"auto", AutoCommit},
 	}
 
 	for name, tc := range tcs {
