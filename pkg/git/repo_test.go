@@ -1,10 +1,12 @@
 package git
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
 
+	"github.com/b4nst/turbogit/pkg/test"
 	git "github.com/libgit2/git2go/v33"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,4 +31,25 @@ func TestGetrepo(t *testing.T) {
 	repo, err := Getrepo()
 	assert.NoError(t, err)
 	assert.Equal(t, r, repo)
+}
+
+func TestCurrentPatch(t *testing.T) {
+	r := test.TestRepo(t)
+	defer test.CleanupRepo(t, r)
+
+	f := test.NewFile(t, r)
+	test.StageFile(t, f, r)
+	_, err := Commit(r, "feat: initial commit")
+	require.NoError(t, err)
+	// Staged stuff
+	fmt.Fprintln(f, "Staged")
+	test.StageFile(t, f, r)
+	// Not staged stuff
+	fmt.Fprintln(f, "Not_staged")
+	test.NewFile(t, r)
+
+	s, err := CurrentPatch(r)
+	assert.NoError(t, err)
+	assert.Contains(t, s, "+Staged")
+	assert.NotContains(t, s, "Not_staged")
 }
