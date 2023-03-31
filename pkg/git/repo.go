@@ -24,27 +24,32 @@ func Getrepo() (*git2go.Repository, error) {
 	return repo, nil
 }
 
-func CurrentPatch(r *git2go.Repository) (string, error) {
+func StagedDiff(r *git2go.Repository) (*git2go.Diff, error) {
 	ref, err := r.RevparseSingle("HEAD")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	old, err := ref.AsCommit()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	tree, err := old.Tree()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	diff, err := r.DiffTreeToIndex(tree, nil, &git2go.DiffOptions{
 		Flags:            git2go.DiffIgnoreWhitespace,
 		IgnoreSubmodules: git2go.SubmoduleIgnoreAll,
 	})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
+
+	return diff, nil
+}
+
+func PatchFromDiff(diff *git2go.Diff) (string, error) {
 	numDeltas, err := diff.NumDeltas()
 	if err != nil {
 		return "", err

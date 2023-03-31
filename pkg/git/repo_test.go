@@ -33,7 +33,7 @@ func TestGetrepo(t *testing.T) {
 	assert.Equal(t, r, repo)
 }
 
-func TestCurrentPatch(t *testing.T) {
+func TestStagedDiff(t *testing.T) {
 	r := test.TestRepo(t)
 	defer test.CleanupRepo(t, r)
 
@@ -48,8 +48,34 @@ func TestCurrentPatch(t *testing.T) {
 	fmt.Fprintln(f, "Not_staged")
 	test.NewFile(t, r)
 
-	s, err := CurrentPatch(r)
+	diff, err := StagedDiff(r)
 	assert.NoError(t, err)
-	assert.Contains(t, s, "+Staged")
-	assert.NotContains(t, s, "Not_staged")
+	deltas, err := diff.NumDeltas()
+	assert.NoError(t, err)
+	assert.Equal(t, 1, deltas)
+}
+
+func TestCurrentPatch(t *testing.T) {
+	r := test.TestRepo(t)
+	defer test.CleanupRepo(t, r)
+
+	test.StageNewFile(t, r)
+	c, err := Commit(r, "feat: initial commit")
+	require.NoError(t, err)
+	tree, err := c.Tree()
+	require.NoError(t, err)
+
+	test.StageNewFile(t, r)
+	c1, err := Commit(r, "feat: second commit")
+	require.NoError(t, err)
+	tree1, err := c1.Tree()
+	require.NoError(t, err)
+
+	diff, err := r.DiffTreeToTree(tree, tree1, nil)
+	require.NoError(t, err)
+
+	s, err := PatchFromDiff(diff)
+	fmt.Println(s)
+	assert.NoError(t, err)
+	assert.Contains(t, s, "new file mode 100644")
 }

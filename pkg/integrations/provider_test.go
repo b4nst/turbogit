@@ -21,7 +21,7 @@ func TestProvidersFrom(t *testing.T) {
 	require.NoError(t, c.SetString("gitlab.token", "supersecret"))
 	r.Remotes.Create("origin", "git@gitlab.com:namespace/project.git")
 
-	p, err := ProvidersFrom(r)
+	p, err := Issuers(r)
 	assert.NoError(t, err)
 	assert.Len(t, p, 2)
 	assert.IsType(t, JiraProvider{}, p[0])

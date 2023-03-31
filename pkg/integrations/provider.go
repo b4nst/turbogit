@@ -4,27 +4,25 @@ import (
 	git "github.com/libgit2/git2go/v33"
 )
 
-// Provider interface abstracts cross-platform providers
-type Provider interface {
+// Issuer interface abstracts cross-platform providers
+type Issuer interface {
 	// Search a list of issue in the provider
 	Search() ([]IssueDescription, error)
 }
 
-func ProvidersFrom(r *git.Repository) ([]Provider, error) {
-	c, err := r.Config()
-	if err != nil {
-		return nil, err
-	}
+type Commiter interface {
+	// Propose commit messages from a diff
+	CommitMessages(*git.Diff) ([]string, error)
+}
 
-	var p []Provider
-
+func Issuers(r *git.Repository) (issuers []Issuer, err error) {
 	// Jira
-	jp, err := jiraProvider(c)
+	jp, err := NewJiraProvider(r)
 	if err != nil {
 		return nil, err
 	}
 	if jp != nil {
-		p = append(p, *jp)
+		issuers = append(issuers, *jp)
 	}
 
 	// Gitlab
@@ -33,8 +31,21 @@ func ProvidersFrom(r *git.Repository) ([]Provider, error) {
 		return nil, err
 	}
 	if glp != nil {
-		p = append(p, *glp)
+		issuers = append(issuers, *glp)
 	}
 
-	return p, nil
+	return
+}
+
+func Commiters(r *git.Repository) (commiters []Commiter, err error) {
+	// OpenAI
+	oai, err := NewOpenAIProvider(r)
+	if err != nil {
+		return nil, err
+	}
+	if oai != nil {
+		commiters = append(commiters, oai)
+	}
+
+	return
 }
