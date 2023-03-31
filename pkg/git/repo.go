@@ -25,19 +25,14 @@ func Getrepo() (*git2go.Repository, error) {
 }
 
 func StagedDiff(r *git2go.Repository) (*git2go.Diff, error) {
-	ref, err := r.RevparseSingle("HEAD")
-	if err != nil {
-		return nil, err
-	}
-	old, err := ref.AsCommit()
-	if err != nil {
-		return nil, err
+	var tree *git2go.Tree
+	if obj, err := r.RevparseSingle("HEAD^{tree}"); err == nil {
+		tree, err = obj.AsTree()
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	tree, err := old.Tree()
-	if err != nil {
-		return nil, err
-	}
 	diff, err := r.DiffTreeToIndex(tree, nil, &git2go.DiffOptions{
 		Flags:            git2go.DiffIgnoreWhitespace,
 		IgnoreSubmodules: git2go.SubmoduleIgnoreAll,
