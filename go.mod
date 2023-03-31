@@ -17,6 +17,7 @@ require (
 	github.com/ktr0731/go-fuzzyfinder v0.7.0
 	github.com/libgit2/git2go/v33 v33.0.9
 	github.com/mattn/go-colorable v0.1.12 // indirect
+	github.com/sashabaranov/go-openai v1.5.7
 	github.com/spf13/cobra v1.4.1-0.20220414043027-bf6cb5804d7a
 	github.com/stretchr/testify v1.8.1
 	github.com/whilp/git-urls v1.0.0

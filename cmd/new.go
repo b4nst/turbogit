@@ -139,7 +139,7 @@ func runNew(opt *newOpt) error {
 }
 
 func promptProviderBranch(repo *git.Repository) (nb format.TugBranch, err error) {
-	providers, err := integrations.ProvidersFrom(repo)
+	providers, err := integrations.Issuers(repo)
 	if err != nil {
 		return nb, err
 	}

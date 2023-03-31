@@ -29,6 +29,8 @@ import (
 	"github.com/b4nst/turbogit/internal/cmdbuilder"
 	"github.com/b4nst/turbogit/pkg/format"
 	tugit "github.com/b4nst/turbogit/pkg/git"
+	"github.com/b4nst/turbogit/pkg/integrations"
+	"github.com/ktr0731/go-fuzzyfinder"
 	git "github.com/libgit2/git2go/v33"
 	"github.com/spf13/cobra"
 )
@@ -44,6 +46,7 @@ func init() {
 	CommitCmd.Flags().BoolP("edit", "e", false, "Prompt editor to edit your message (add body or/and footer(s))")
 	CommitCmd.Flags().StringP("scope", "s", "", "Add a scope")
 	CommitCmd.Flags().BoolP("amend", "a", false, "Amend commit")
+	CommitCmd.Flags().BoolP("fill", "f", false, "Use commit message provider to fill the message")
 }
 
 func typeFlagCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -71,18 +74,19 @@ $ tug commit ci -e message
 $ tug commit -a -t fix
 	`,
 	Args: func(cmd *cobra.Command, args []string) error {
-		amend, _ := cmd.Flags().GetBool("amend")
-		fType, _ := cmd.Flags().GetString("type")
-		ma := 0
-		if !amend {
-			ma++ // Need at least one argument for the description
-			if fType == "" {
-				ma++ // Also need a type since it was not passed as flag
-			}
-		}
-		if len(args) < ma {
-			return fmt.Errorf("requires at least %d arg(s), only received %d", ma, len(args))
-		}
+		// TODO: better implementation
+		// amend, _ := cmd.Flags().GetBool("amend")
+		// fType, _ := cmd.Flags().GetString("type")
+		// ma := 0
+		// if !amend {
+		// 	ma++ // Need at least one argument for the description
+		// 	if fType == "" {
+		// 		ma++ // Also need a type since it was not passed as flag
+		// 	}
+		// }
+		// if len(args) < ma {
+		// 	return fmt.Errorf("requires at least %d arg(s), only received %d", ma, len(args))
+		// }
 		return nil
 	},
 	// SilenceUsage: true,
@@ -110,6 +114,8 @@ type commitOpt struct {
 	Amend bool
 	// Current repository
 	Repo *git.Repository
+	// Use provider to fill
+	Fill bool
 }
 
 func parseCommitCmd(cmd *cobra.Command, args []string) (*commitOpt, error) {
@@ -154,6 +160,12 @@ func parseCommitCmd(cmd *cobra.Command, args []string) (*commitOpt, error) {
 		return nil, err
 	}
 
+	// --fill
+	opt.Fill, err = cmd.Flags().GetBool("fill")
+	if err != nil {
+		return nil, err
+	}
+
 	// Find repo
 	opt.Repo = cmdbuilder.GetRepo(cmd)
 
@@ -162,52 +174,27 @@ func parseCommitCmd(cmd *cobra.Command, args []string) (*commitOpt, error) {
 	return opt, nil
 }
 
-func runCommit(cco *commitOpt) error {
-	var ca *git.Commit
-	if cco.Amend {
-		o, err := cco.Repo.RevparseSingle("HEAD")
-		if err != nil {
-			return err
+func runCommit(cco *commitOpt) (err error) {
+	// Sanity checks
+	if nc, err := tugit.StageReady(cco.Repo); !cco.Amend && !nc {
+		if err == nil {
+			err = fmt.Errorf("Nothing to commit.")
 		}
-		ca, err = o.AsCommit()
-		if err != nil {
-			return err
-		}
+		return err
 	}
-
-	// Check if working tree is clean
-	if ca == nil { // Only when not amending
-		nc, err := tugit.StageReady(cco.Repo)
-		if err != nil {
-			return err
-		}
-		if !nc {
-			fmt.Println("Nothing to commit, working tree clean")
-			return nil
-		}
+	// Get initial message and commit, if any
+	mi := getMsgInitializer(cco)
+	initMsg, initCommit, err := mi(cco.Repo)
+	if err != nil {
+		return fmt.Errorf("Couldn't retrieve initial message: %w", err)
 	}
-
-	msg := ""
-	if ca != nil {
-		// Init message from amend origin
-		msg = ca.Message()
-	} else {
-		// Init message from hooks
-		if err := tugit.PreCommitHook(cco.Repo.Path()); err != nil {
-			return fmt.Errorf("Error during pre-commit hook: %s", err.Error())
-		}
-		m, err := tugit.PrepareCommitMsgHook(cco.Repo.Path())
-		if err != nil {
-			return fmt.Errorf("Error during prepare-commit-msg hook: %s", err.Error())
-		}
-		msg = m
-	}
-	// Try to parse the initial message
-	cmo := format.ParseCommitMsg(msg)
+	// Parse initial message
+	cmo := format.ParseCommitMsg(initMsg)
 	if cmo == nil {
 		// If not formatted put raw message as Description
-		cmo = &format.CommitMessageOption{Description: msg}
+		cmo = &format.CommitMessageOption{Description: initMsg}
 	}
+	// Overwrite with arguments
 	if err := cmo.Overwrite(&format.CommitMessageOption{
 		Ctype:           cco.CType,
 		BreakingChanges: cco.BreakingChanges,
@@ -216,16 +203,15 @@ func runCommit(cco *commitOpt) error {
 	}); err != nil {
 		return err
 	}
+	// Check commit message conformity
 	if err := cmo.Check(); err != nil {
 		return err
 	}
-
 	// Build commit message
 	cmsg := format.CommitMessage(cmo)
 	if cco.PromptEditor {
 		cmsg = promptEditor(cmsg)
 	}
-	var err error
 	cmsg, err = tugit.CommitMsgHook(cco.Repo.Path(), cmsg)
 	if err != nil {
 		return fmt.Errorf("Error during commit-msg hook: %s", err.Error())
@@ -233,8 +219,8 @@ func runCommit(cco *commitOpt) error {
 
 	// Write commit
 	var commit *git.Commit
-	if ca != nil {
-		commit, err = tugit.Amend(ca, cmsg)
+	if cco.Amend {
+		commit, err = tugit.Amend(initCommit, cmsg)
 	} else {
 		commit, err = tugit.Commit(cco.Repo, cmsg)
 	}
@@ -254,6 +240,82 @@ func runCommit(cco *commitOpt) error {
 	}
 
 	return nil
+}
+
+type msgInitializer func(*git.Repository) (string, *git.Commit, error)
+
+func getMsgInitializer(cco *commitOpt) msgInitializer {
+	if cco.Amend {
+		return fromLastCommit
+	} else if cco.Fill {
+		return fromProvider
+	} else {
+		return fromHooks
+	}
+}
+
+func fromLastCommit(r *git.Repository) (string, *git.Commit, error) {
+	o, err := r.RevparseSingle("HEAD")
+	if err != nil {
+		return "", nil, err
+	}
+	ca, err := o.AsCommit()
+	if err != nil {
+		return "", nil, err
+	}
+
+	return ca.Message(), ca, nil
+}
+
+func fromProvider(r *git.Repository) (string, *git.Commit, error) {
+	providers, err := integrations.Commiters(r)
+	if err != nil {
+		return "", nil, err
+	}
+	diff, err := tugit.StagedDiff(r)
+	if err != nil {
+		return "", nil, err
+	}
+	var msgs []string
+	for _, p := range providers {
+		pmsgs, err := p.CommitMessages(diff)
+		if err != nil {
+			return "", nil, err
+		}
+		msgs = append(msgs, pmsgs...)
+	}
+
+	if len(msgs) > 1 {
+		idx, err := fuzzyfinder.Find(msgs,
+			func(i int) string {
+				return msgs[i]
+			},
+			fuzzyfinder.WithPreviewWindow(func(i, _, _ int) string {
+				if i == -1 {
+					return ""
+				}
+				return msgs[i]
+			}))
+		if err != nil {
+			return "", nil, err
+		}
+
+		return msgs[idx], nil, nil
+	} else {
+		return msgs[0], nil, nil
+	}
+}
+
+func fromHooks(r *git.Repository) (string, *git.Commit, error) {
+	if err := tugit.PreCommitHook(r.Path()); err != nil {
+		return "", nil, fmt.Errorf("Error during pre-commit hook: %s", err.Error())
+	}
+	m, err := tugit.PrepareCommitMsgHook(r.Path())
+	if err != nil {
+		return "", nil, fmt.Errorf("Error during prepare-commit-msg hook: %s", err.Error())
+	}
+
+	return m, nil, nil
 }
 
 func promptEditor(msg string) string {

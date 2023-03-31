@@ -46,8 +46,13 @@ func (jp JiraProvider) Search() ([]IssueDescription, error) {
 	return res, nil
 }
 
-func jiraProvider(c *git.Config) (*JiraProvider, error) {
-	enable, _ := c.LookupBool("jira.enable")
+func NewJiraProvider(r *git.Repository) (*JiraProvider, error) {
+	c, err := r.Config()
+	if err != nil {
+		return nil, err
+	}
+
+	enable, _ := c.LookupBool("jira.enabled")
 	if !enable {
 		return nil, nil
 	}
