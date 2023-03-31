@@ -1,0 +1,264 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <title>Code of conduct</title>
+    <meta name="description" content="Documentation for Turbogit">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Source+Sans+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" type="text/css" href="/turbogit/assets/normalize.css?v=1680282440"
+        media="screen" />
+    <link rel="stylesheet" type="text/css" href="/turbogit/assets/doctave-style.css?v=1680282440"
+        media="screen" />
+    <link rel="stylesheet" type="text/css" href="/turbogit/assets/katex.css?v=1680282440" media="screen" />
+    <link rel="stylesheet" type="text/css" href="/turbogit/assets/prism-ghcolors.css?v=1680282440"
+        media="screen" />
+
+    <script>
+        var DOCTAVE_TIMESTAMP = "1680282440";
+        var BASE_PATH = "/turbogit/";
+        var color = localStorage.getItem('doctave-color')
+
+        if (color === 'dark') {
+            document.getElementsByTagName('html')[0].classList.remove('light');
+            document.getElementsByTagName('html')[0].classList.add('dark');
+        } else {
+            document.getElementsByTagName('html')[0].classList.remove('dark');
+            document.getElementsByTagName('html')[0].classList.add('light');
+        }
+    </script>
+
+    
+    
+ <link rel="shortcut icon" type="image/x-icon" href="/turbogit/favicon.ico">
+ 
+    
+</head>
+
+<body>
+    <label for='menu-toggle-switch' class='menu-toggle-button'>
+        ☰
+    </label>
+    <input type="checkbox" id="menu-toggle-switch" value='0' />
+    <div class='page'>
+        <div class='header'>
+            <div class='logo'>
+                
+                <a href="/turbogit/">
+                    <img src="/turbogit/assets/tu_logo.png" alt='Turbogit logo'></img>
+                </a>
+                
+                <h2 class='project-name'>
+                    <a href="/turbogit/">
+                        Turbogit
+                    </a>
+                </h2>
+            </div>
+            <div class='search'>
+                <form id='search-form'>
+    <input type='text' id='search-box' autocomplete="off" placeholder="Search..."></input>
+    <span class='search-icon'>S</span>
+    <ul id='search-results'></ul>
+</form>
+
+            </div>
+            <div class='header-dummy-right'>
+            </div>
+        </div>
+        <div class='container'>
+            <div class='sidebar-left'>
+                <nav class='site-nav'>
+    <ul>
+        
+            <li><a href="/turbogit/installation">Installation</a></li>
+            
+        
+            <li><a href="/turbogit/commands">Usage</a></li>
+            
+                <ul>
+    
+        <li><a href="/turbogit/commands/tug">tug</a></li>
+        
+    
+        <li><a href="/turbogit/commands/tug_check">tug check</a></li>
+        
+    
+        <li><a href="/turbogit/commands/tug_commit">tug commit</a></li>
+        
+    
+        <li><a href="/turbogit/commands/tug_completion">tug completion</a></li>
+        
+    
+        <li><a href="/turbogit/commands/tug_logs">tug logs</a></li>
+        
+    
+        <li><a href="/turbogit/commands/tug_new">tug new</a></li>
+        
+    
+        <li><a href="/turbogit/commands/tug_release">tug release</a></li>
+        
+    
+        <li><a href="/turbogit/commands/tug_version">tug version</a></li>
+        
+    
+</ul>
+
+            
+        
+            <li><a href="/turbogit/integration">Integration</a></li>
+            
+        
+            <li><a href="/turbogit/shell-completion">Shell completion</a></li>
+            
+        
+            <li><a href="/turbogit/contributing">Contributing</a></li>
+            
+        
+            <li><a class="active" href="/turbogit/code-of-conduct">Code of conduct</a></li>
+            
+        
+    </ul>
+    <span id='light-dark-mode-switch'>
+        <svg xmlns="http://www.w3.org/2000/svg" id="dark-mode-icon" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+        </svg>
+
+        <svg xmlns="http://www.w3.org/2000/svg" id="light-mode-icon" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd" />
+        </svg>
+    </span>
+</nav>
+
+            </div>
+            <div class='doctave-content'>
+                <h1 id="contributor-covenant-code-of-conduct">Contributor Covenant Code of Conduct</h1>
+<h2 id="our-pledge">Our Pledge</h2>
+<p>In the interest of fostering an open and welcoming environment, we as
+contributors and maintainers pledge to making participation in our project and
+our community a harassment-free experience for everyone, regardless of age, body
+size, disability, ethnicity, sex characteristics, gender identity and expression,
+level of experience, education, socio-economic status, nationality, personal
+appearance, race, religion, or sexual identity and orientation.</p>
+<h2 id="our-standards">Our Standards</h2>
+<p>Examples of behavior that contributes to creating a positive environment
+include:</p>
+<ul>
+<li>Using welcoming and inclusive language</li>
+<li>Being respectful of differing viewpoints and experiences</li>
+<li>Gracefully accepting constructive criticism</li>
+<li>Focusing on what is best for the community</li>
+<li>Showing empathy towards other community members</li>
+</ul>
+<p>Examples of unacceptable behavior by participants include:</p>
+<ul>
+<li>The use of sexualized language or imagery and unwelcome sexual attention or
+advances</li>
+<li>Trolling, insulting/derogatory comments, and personal or political attacks</li>
+<li>Public or private harassment</li>
+<li>Publishing others' private information, such as a physical or electronic
+address, without explicit permission</li>
+<li>Other conduct which could reasonably be considered inappropriate in a
+professional setting</li>
+</ul>
+<h2 id="our-responsibilities">Our Responsibilities</h2>
+<p>Project maintainers are responsible for clarifying the standards of acceptable
+behavior and are expected to take appropriate and fair corrective action in
+response to any instances of unacceptable behavior.</p>
+<p>Project maintainers have the right and responsibility to remove, edit, or
+reject comments, commits, code, wiki edits, issues, and other contributions
+that are not aligned to this Code of Conduct, or to ban temporarily or
+permanently any contributor for other behaviors that they deem inappropriate,
+threatening, offensive, or harmful.</p>
+<h2 id="scope">Scope</h2>
+<p>This Code of Conduct applies both within project spaces and in public spaces
+when an individual is representing the project or its community. Examples of
+representing a project or community include using an official project e-mail
+address, posting via an official social media account, or acting as an appointed
+representative at an online or offline event. Representation of a project may be
+further defined and clarified by project maintainers.</p>
+<h2 id="enforcement">Enforcement</h2>
+<p>Instances of abusive, harassing, or otherwise unacceptable behavior may be
+reported by contacting the project team at bastyen.a@gmail.com. All
+complaints will be reviewed and investigated and will result in a response that
+is deemed necessary and appropriate to the circumstances. The project team is
+obligated to maintain confidentiality with regard to the reporter of an incident.
+Further details of specific enforcement policies may be posted separately.</p>
+<p>Project maintainers who do not follow or enforce the Code of Conduct in good
+faith may face temporary or permanent repercussions as determined by other
+members of the project's leadership.</p>
+<h2 id="attribution">Attribution</h2>
+<p>This Code of Conduct is adapted from the <a href="https://www.contributor-covenant.org">Contributor Covenant</a>, version 1.4,
+available at https://www.contributor-covenant.org/version/1/4/code-of-conduct.html</p>
+<p>For answers to common questions about this code of conduct, see
+https://www.contributor-covenant.org/faq</p>
+
+            </div>
+            <div class='sidebar-right'>
+                <div class='page-nav' id='page-nav'>
+                    <p class='page-nav-header'>On this page</p>
+                    <ul>
+                        
+                        <li class='page-nav-level-1'>
+                            <a href='#contributor-covenant-code-of-conduct'>Contributor Covenant Code of Conduct</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#our-pledge'>Our Pledge</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#our-standards'>Our Standards</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#our-responsibilities'>Our Responsibilities</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#scope'>Scope</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#enforcement'>Enforcement</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#attribution'>Attribution</a>
+                        </li>
+                        
+                    </ul>
+                </div>
+            </div>
+            <div class='wave-container'>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+                    <path fill-opacity="0.35"
+                        d="M0,192L60,213.3C120,235,240,277,360,277.3C480,277,600,235,720,192C840,149,960,107,1080,122.7C1200,139,1320,213,1380,250.7L1440,288L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                    <path fill-opacity="0.5"
+                        d="M0,160L60,181.3C120,203,240,245,360,229.3C480,213,600,139,720,138.7C840,139,960,213,1080,229.3C1200,245,1320,203,1380,181.3L1440,160L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                    <path fill-opacity="0.2"
+                        d="M0,224L60,197.3C120,171,240,117,360,117.3C480,117,600,171,720,186.7C840,203,960,181,1080,186.7C1200,192,1320,224,1380,240L1440,256L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                </svg>
+                <p>Powered by <a href='https://cli.doctave.com' target='_blank'>Doctave</a></p>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="/turbogit/assets/katex.js?v=1680282440"></script>
+    <script type="text/javascript" src="/turbogit/assets/mermaid.js?v=1680282440"></script>
+    <script type="text/javascript" src="/turbogit/assets/elasticlunr.js?v=1680282440"></script>
+    <script type="text/javascript" src="/turbogit/assets/prism.js?v=1680282440"></script>
+    <script type="text/javascript" src="/turbogit/assets/doctave-app.js?v=1680282440"></script>
+
+    
+</body>
+
+</html>

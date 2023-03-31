@@ -1,0 +1,425 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <title>Contributing</title>
+    <meta name="description" content="Documentation for Turbogit">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Source+Sans+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" type="text/css" href="/turbogit/assets/normalize.css?v=1680282440"
+        media="screen" />
+    <link rel="stylesheet" type="text/css" href="/turbogit/assets/doctave-style.css?v=1680282440"
+        media="screen" />
+    <link rel="stylesheet" type="text/css" href="/turbogit/assets/katex.css?v=1680282440" media="screen" />
+    <link rel="stylesheet" type="text/css" href="/turbogit/assets/prism-ghcolors.css?v=1680282440"
+        media="screen" />
+
+    <script>
+        var DOCTAVE_TIMESTAMP = "1680282440";
+        var BASE_PATH = "/turbogit/";
+        var color = localStorage.getItem('doctave-color')
+
+        if (color === 'dark') {
+            document.getElementsByTagName('html')[0].classList.remove('light');
+            document.getElementsByTagName('html')[0].classList.add('dark');
+        } else {
+            document.getElementsByTagName('html')[0].classList.remove('dark');
+            document.getElementsByTagName('html')[0].classList.add('light');
+        }
+    </script>
+
+    
+    
+ <link rel="shortcut icon" type="image/x-icon" href="/turbogit/favicon.ico">
+ 
+    
+</head>
+
+<body>
+    <label for='menu-toggle-switch' class='menu-toggle-button'>
+        ☰
+    </label>
+    <input type="checkbox" id="menu-toggle-switch" value='0' />
+    <div class='page'>
+        <div class='header'>
+            <div class='logo'>
+                
+                <a href="/turbogit/">
+                    <img src="/turbogit/assets/tu_logo.png" alt='Turbogit logo'></img>
+                </a>
+                
+                <h2 class='project-name'>
+                    <a href="/turbogit/">
+                        Turbogit
+                    </a>
+                </h2>
+            </div>
+            <div class='search'>
+                <form id='search-form'>
+    <input type='text' id='search-box' autocomplete="off" placeholder="Search..."></input>
+    <span class='search-icon'>S</span>
+    <ul id='search-results'></ul>
+</form>
+
+            </div>
+            <div class='header-dummy-right'>
+            </div>
+        </div>
+        <div class='container'>
+            <div class='sidebar-left'>
+                <nav class='site-nav'>
+    <ul>
+        
+            <li><a href="/turbogit/installation">Installation</a></li>
+            
+        
+            <li><a href="/turbogit/commands">Usage</a></li>
+            
+                <ul>
+    
+        <li><a href="/turbogit/commands/tug">tug</a></li>
+        
+    
+        <li><a href="/turbogit/commands/tug_check">tug check</a></li>
+        
+    
+        <li><a href="/turbogit/commands/tug_commit">tug commit</a></li>
+        
+    
+        <li><a href="/turbogit/commands/tug_completion">tug completion</a></li>
+        
+    
+        <li><a href="/turbogit/commands/tug_logs">tug logs</a></li>
+        
+    
+        <li><a href="/turbogit/commands/tug_new">tug new</a></li>
+        
+    
+        <li><a href="/turbogit/commands/tug_release">tug release</a></li>
+        
+    
+        <li><a href="/turbogit/commands/tug_version">tug version</a></li>
+        
+    
+</ul>
+
+            
+        
+            <li><a href="/turbogit/integration">Integration</a></li>
+            
+        
+            <li><a href="/turbogit/shell-completion">Shell completion</a></li>
+            
+        
+            <li><a class="active" href="/turbogit/contributing">Contributing</a></li>
+            
+        
+            <li><a href="/turbogit/code-of-conduct">Code of conduct</a></li>
+            
+        
+    </ul>
+    <span id='light-dark-mode-switch'>
+        <svg xmlns="http://www.w3.org/2000/svg" id="dark-mode-icon" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+        </svg>
+
+        <svg xmlns="http://www.w3.org/2000/svg" id="light-mode-icon" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd" />
+        </svg>
+    </span>
+</nav>
+
+            </div>
+            <div class='doctave-content'>
+                <h1 id="contributing-to-turbogit">Contributing to Turbogit</h1>
+<p>We would love for you to contribute to Turbogit and help make it even better than it is
+today! As a contributor, here are the guidelines we would like you to follow:</p>
+<h2 id="code-of-conduct">Code of Conduct</h2>
+<p>Help us keep Turbogit open and inclusive. Please read and follow our <a href="/turbogit/code-of-conduct">Code of Conduct</a>.</p>
+<h2 id="got-a-question-or-problem?">Got a Question or Problem?</h2>
+<p>If you have any questions regarding how to use Turbogit or contributing to this repo
+please <a href="/turbogit/contributing#submitting-an-issue">submit an issue</a> using the <strong>Need help</strong> template.</p>
+<h2 id="found-a-bug?">Found a Bug?</h2>
+<p>If you find a bug in the source code, you can help us by
+<a href="/turbogit/contributing#submitting-an-issue">submitting an issue</a> using the <strong>Bug report</strong> template. Even better, you can
+<a href="/turbogit/contributing#submitting-a-pull-request">submit a Pull Request</a> with a fix.</p>
+<h2 id="missing-a-feature?">Missing a Feature?</h2>
+<p>You can <em>request</em> a new feature by <a href="/turbogit/contributing#submitting-an-issue">submitting an issue</a> to our GitHub
+Repository using the <strong>Feature request</strong> template. If you would like to <em>implement</em> a new feature, please submit an issue with
+a proposal for your work first, to be sure that we can use it.
+Please consider what kind of change it is:</p>
+<ul>
+<li>For a <strong>Major Feature</strong>, first open an issue and outline your proposal so that it can be
+discussed. This will also allow us to better coordinate our efforts, prevent duplication of work,
+and help you to craft the change so that it is successfully accepted into the project.</li>
+<li><strong>Small Features</strong> can be crafted and directly <a href="/turbogit/contributing#submitting-a-pull-request">submitted as a Pull Request</a>.</li>
+</ul>
+<h2 id="submission-guidelines">Submission Guidelines</h2>
+<h3 id="submitting-an-issue">Submitting an Issue</h3>
+<p>Before you submit an issue, please search the issue tracker, maybe an issue for your problem already exists and the discussion might inform you of workarounds readily available.</p>
+<p>We want to fix all the issues as soon as possible, but before fixing a bug we need to reproduce and confirm it. In order to reproduce bugs, please fill the <em>To Reproduce</em> section when possible.
+Having a reproducible scenario gives us a wealth of important information without going back &amp; forth to you with additional questions like:</p>
+<ul>
+<li>version of Turbogit used</li>
+<li>general system information</li>
+<li>and most importantly - a use-case that fails</li>
+</ul>
+<p>A minimal reproduce scenarion allows us to quickly confirm a bug (or point out coding problem) as well as confirm that we are fixing the right problem.</p>
+<p>We will be insisting on a minimal reproduce scenario in order to save maintainers time and ultimately be able to fix more bugs. Interestingly, from our experience users often find coding problems themselves while preparing a minimal plunk. We understand that sometimes it might be hard to extract essentials bits of code from a larger code-base but we really need to isolate the problem before we can fix it.</p>
+<p>Unfortunately, we are not able to investigate / fix bugs without a minimal reproduction, so if we don't hear back from you we are going to close an issue that doesn't have enough info to be reproduced.</p>
+<p>You can file new issues by filling out our <a href="https://github.com/b4nst/turbogit/issues/new/choose">new issue form</a> using the <strong>Bug report</strong> template.</p>
+<h3 id="submitting-a-pull-request">Submitting a Pull Request</h3>
+<p>Before you submit your Pull Request (PR) consider the following guidelines:</p>
+<ol>
+<li>
+<p>Search <a href="https://github.com/angular/angular/pulls">GitHub</a> for an open or closed PR
+that relates to your submission. You don't want to duplicate effort.</p>
+</li>
+<li>
+<p>Fork the b4nst/turbogit repo.</p>
+</li>
+<li>
+<p>Make your changes in a new git branch:</p>
+<pre><code class="language-shell">git checkout -b my-fix-branch main
+</code></pre>
+</li>
+<li>
+<p>Create your patch, <strong>including appropriate test cases</strong>.</p>
+</li>
+<li>
+<p>Follow our <a href="/turbogit/contributing#coding-rules">Coding Rules</a>.</p>
+</li>
+<li>
+<p>Commit your changes using a descriptive commit message that follows our
+<a href="/turbogit/contributing#commit-message-format">commit message conventions</a>. Adherence to these conventions
+is necessary because release notes will be automatically generated from these messages (eventually).</p>
+<pre><code class="language-shell">tug commit
+</code></pre>
+</li>
+<li>
+<p>Push your branch to GitHub:</p>
+<pre><code class="language-shell">git push origin my-fix-branch
+</code></pre>
+</li>
+<li>
+<p>In GitHub, send a pull request to <code>turbogit:main</code>.</p>
+</li>
+</ol>
+<ul>
+<li>If we suggest changes, or the ci fail then:
+<ul>
+<li>
+<p>Make the required updates.</p>
+</li>
+<li>
+<p>Rebase your branch and force push to your GitHub repository (this will update your Pull Request):</p>
+<pre><code class="language-shell">git rebase main -i
+git push -f
+</code></pre>
+</li>
+</ul>
+</li>
+</ul>
+<p>That's it! Thank you for your contribution!</p>
+<h4 id="after-your-pull-request-is-merged">After your pull request is merged</h4>
+<p>After your pull request is merged, you can safely delete your branch and pull the changes
+from the main (upstream) repository:</p>
+<ul>
+<li>
+<p>Delete the remote branch on GitHub either through the GitHub web UI or your local shell as follows:</p>
+<pre><code class="language-shell">git push origin --delete my-fix-branch
+</code></pre>
+</li>
+<li>
+<p>Check out the main branch:</p>
+<pre><code class="language-shell">git checkout main -f
+</code></pre>
+</li>
+<li>
+<p>Delete the local branch:</p>
+<pre><code class="language-shell">git branch -D my-fix-branch
+</code></pre>
+</li>
+<li>
+<p>Update your main with the latest upstream version:</p>
+<pre><code class="language-shell">git pull --ff upstream main
+</code></pre>
+</li>
+</ul>
+<h2 id="coding-rules">Coding Rules</h2>
+<p>To ensure consistency throughout the source code, keep these rules in mind as you are working:</p>
+<ul>
+<li>All features or bug fixes <strong>must be tested</strong> by one or more specs (unit-tests).</li>
+<li>All commands <strong>must be documented</strong> using cobra generated documentation.</li>
+</ul>
+<h2 id="commit-message-guidelines">Commit Message Guidelines</h2>
+<p>We follow <a href="https://www.conventionalcommits.org/en/v1.0.0/">Conventional Commits</a> for out commit messages. This leads to <strong>more
+readable messages</strong> that are easy to follow when looking through the <strong>project history</strong>.</p>
+<h3 id="commit-message-format">Commit Message Format</h3>
+<p>Each commit message consists of a <strong>header</strong>, a <strong>body</strong> and a <strong>footer</strong>.  The header has a special
+format that includes a <strong>type</strong>, a <strong>scope</strong> and a <strong>subject</strong>:</p>
+<pre><code>&lt;type&gt;(&lt;scope&gt;): &lt;subject&gt;
+&lt;BLANK LINE&gt;
+&lt;body&gt;
+&lt;BLANK LINE&gt;
+&lt;footer&gt;
+</code></pre>
+<p>The <strong>header</strong> is mandatory and the <strong>scope</strong> of the header is optional.</p>
+<p>Any line of the commit message cannot be longer 100 characters! This allows the message to be easier
+to read on GitHub as well as in various git tools.</p>
+<p>Samples: (even more <a href="https://github.com/angular/angular/commits/main">samples</a>)</p>
+<pre><code>docs(changelog): update changelog to beta.5
+</code></pre>
+<pre><code>fix: bug in commit command
+</code></pre>
+<h3 id="revert">Revert</h3>
+<p>If the commit reverts a previous commit, it should begin with <code>revert: </code>, followed by the header of the reverted commit. In the body it should say: <code>This reverts commit &lt;hash&gt;.</code>, where the hash is the SHA of the commit being reverted.</p>
+<h3 id="type">Type</h3>
+<p>Must be one of the following:</p>
+<ul>
+<li><strong>build</strong>: Changes that affect the build system or external dependencies (example scopes: gulp, broccoli, npm)</li>
+<li><strong>ci</strong>: Changes to our CI configuration files and scripts (example scopes: Travis, Circle, BrowserStack, SauceLabs)</li>
+<li><strong>docs</strong>: Documentation only changes</li>
+<li><strong>feat</strong>: A new feature</li>
+<li><strong>fix</strong>: A bug fix</li>
+<li><strong>perf</strong>: A code change that improves performance</li>
+<li><strong>refactor</strong>: A code change that neither fixes a bug nor adds a feature</li>
+<li><strong>revert</strong>: Revert commit</li>
+<li><strong>style</strong>: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)</li>
+<li><strong>test</strong>: Adding missing tests or correcting existing tests</li>
+</ul>
+<h3 id="scope">Scope</h3>
+<p>The scope should be the name of command affected, if any.</p>
+<p>e.g.:</p>
+<ul>
+<li>branch</li>
+<li>commit</li>
+<li>config</li>
+</ul>
+<h3 id="subject">Subject</h3>
+<p>The subject contains a succinct description of the change:</p>
+<ul>
+<li>use the imperative, present tense: "change" not "changed" nor "changes"</li>
+<li>don't capitalize the first letter</li>
+<li>no dot (.) at the end</li>
+</ul>
+<h3 id="body">Body</h3>
+<p>Just as in the <strong>subject</strong>, use the imperative, present tense: "change" not "changed" nor "changes".
+The body should include the motivation for the change and contrast this with previous behavior. The body is optional.</p>
+<h3 id="footer">Footer</h3>
+<p>The footer is the place to reference GitHub issues that this commit <strong>Closes</strong>. The footer is optional</p>
+
+            </div>
+            <div class='sidebar-right'>
+                <div class='page-nav' id='page-nav'>
+                    <p class='page-nav-header'>On this page</p>
+                    <ul>
+                        
+                        <li class='page-nav-level-1'>
+                            <a href='#contributing-to-turbogit'>Contributing to Turbogit</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#code-of-conduct'>Code of Conduct</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#got-a-question-or-problem?'>Got a Question or Problem?</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#found-a-bug?'>Found a Bug?</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#missing-a-feature?'>Missing a Feature?</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#submission-guidelines'>Submission Guidelines</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#submitting-an-issue'>Submitting an Issue</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#submitting-a-pull-request'>Submitting a Pull Request</a>
+                        </li>
+                        
+                        <li class='page-nav-level-4'>
+                            <a href='#after-your-pull-request-is-merged'>After your pull request is merged</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#coding-rules'>Coding Rules</a>
+                        </li>
+                        
+                        <li class='page-nav-level-2'>
+                            <a href='#commit-message-guidelines'>Commit Message Guidelines</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#commit-message-format'>Commit Message Format</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#revert'>Revert</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#type'>Type</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#scope'>Scope</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#subject'>Subject</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#body'>Body</a>
+                        </li>
+                        
+                        <li class='page-nav-level-3'>
+                            <a href='#footer'>Footer</a>
+                        </li>
+                        
+                    </ul>
+                </div>
+            </div>
+            <div class='wave-container'>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+                    <path fill-opacity="0.35"
+                        d="M0,192L60,213.3C120,235,240,277,360,277.3C480,277,600,235,720,192C840,149,960,107,1080,122.7C1200,139,1320,213,1380,250.7L1440,288L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                    <path fill-opacity="0.5"
+                        d="M0,160L60,181.3C120,203,240,245,360,229.3C480,213,600,139,720,138.7C840,139,960,213,1080,229.3C1200,245,1320,203,1380,181.3L1440,160L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                    <path fill-opacity="0.2"
+                        d="M0,224L60,197.3C120,171,240,117,360,117.3C480,117,600,171,720,186.7C840,203,960,181,1080,186.7C1200,192,1320,224,1380,240L1440,256L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z">
+                    </path>
+                </svg>
+                <p>Powered by <a href='https://cli.doctave.com' target='_blank'>Doctave</a></p>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript" src="/turbogit/assets/katex.js?v=1680282440"></script>
+    <script type="text/javascript" src="/turbogit/assets/mermaid.js?v=1680282440"></script>
+    <script type="text/javascript" src="/turbogit/assets/elasticlunr.js?v=1680282440"></script>
+    <script type="text/javascript" src="/turbogit/assets/prism.js?v=1680282440"></script>
+    <script type="text/javascript" src="/turbogit/assets/doctave-app.js?v=1680282440"></script>
+
+    
+</body>
+
+</html>
