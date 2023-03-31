@@ -36,6 +36,7 @@ func TestGetrepo(t *testing.T) {
 func TestStagedDiff(t *testing.T) {
 	r := test.TestRepo(t)
 	defer test.CleanupRepo(t, r)
+	test.InitRepoConf(t, r)
 
 	f := test.NewFile(t, r)
 	test.StageFile(t, f, r)
@@ -58,6 +59,7 @@ func TestStagedDiff(t *testing.T) {
 func TestCurrentPatch(t *testing.T) {
 	r := test.TestRepo(t)
 	defer test.CleanupRepo(t, r)
+	test.InitRepoConf(t, r)
 
 	test.StageNewFile(t, r)
 	c, err := Commit(r, "feat: initial commit")
