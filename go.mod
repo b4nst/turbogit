@@ -16,7 +16,6 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hpcloud/golor v0.0.0-20150914221010-dc1b58c471a0
 	github.com/imdario/mergo v0.3.15
-	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/ktr0731/go-fuzzyfinder v0.7.0
 	github.com/libgit2/git2go/v33 v33.0.9
@@ -24,7 +23,7 @@ require (
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/sashabaranov/go-openai v1.5.8
-	github.com/spf13/cobra v1.6.1
+	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.2
 	github.com/whilp/git-urls v1.0.0
 	github.com/xanzy/go-gitlab v0.81.0
