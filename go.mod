@@ -15,7 +15,7 @@ require (
 	github.com/hashicorp/go-hclog v1.0.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hpcloud/golor v0.0.0-20150914221010-dc1b58c471a0
-	github.com/imdario/mergo v0.3.15
+	github.com/imdario/mergo v0.3.16
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/ktr0731/go-fuzzyfinder v0.7.0
