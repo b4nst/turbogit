@@ -25,7 +25,7 @@ require (
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/sashabaranov/go-openai v1.9.3
 	github.com/spf13/cobra v1.6.1
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.4
 	github.com/whilp/git-urls v1.0.0
 	github.com/xanzy/go-gitlab v0.81.0
 	golang.org/x/crypto v0.7.0 // indirect
